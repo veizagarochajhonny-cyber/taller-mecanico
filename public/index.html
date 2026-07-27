@@ -42,7 +42,11 @@
     .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 
     .grid-2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
-    @media(min-width: 600px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+    .grid-3 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media(min-width: 600px) { 
+      .grid-2 { grid-template-columns: 1fr 1fr; } 
+      .grid-3 { grid-template-columns: 1fr 1fr 1fr; } 
+    }
 
     .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
     .btn-primary { background-color: var(--primary); color: white; }
@@ -65,13 +69,6 @@
     /* Modal Login */
     #modal-login { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.9); display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 15px; }
     .modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 350px; text-align: center; }
-
-    /* Estilo de Impresión de Recibo */
-    @media print {
-      body * { visibility: hidden; }
-      #area-recibo, #area-recibo * { visibility: visible; }
-      #area-recibo { position: absolute; left: 0; top: 0; width: 100%; }
-    }
   </style>
 </head>
 <body>
@@ -184,6 +181,7 @@
         <button class="btn-quick-filter" onclick="filtrarReporteRapido('hoy')">📅 Hoy</button>
         <button class="btn-quick-filter" onclick="filtrarReporteRapido('semana')">🗓️ Esta Semana</button>
         <button class="btn-quick-filter" onclick="filtrarReporteRapido('mes')">📊 Este Mes</button>
+        <button class="btn-quick-filter" onclick="filtrarReporteRapido('todos')">🌐 Todo el Historial</button>
       </div>
 
       <div class="grid-2">
@@ -199,13 +197,17 @@
       <button class="btn btn-primary" onclick="cargarReportes()" style="margin-top:5px;">🔍 Consultar Reporte</button>
     </div>
 
-    <div class="grid-2" style="margin-bottom: 15px;">
+    <div class="grid-3" style="margin-bottom: 15px;">
       <div class="metric-card">
-        <div style="font-size: 0.85rem; color: var(--text-muted);">Vehículos Entregados / Cobrados</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Vehículos en Taller Ahora</div>
+        <div class="metric-value" id="rep-en-proceso" style="color: var(--warning);">0</div>
+      </div>
+      <div class="metric-card">
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Vehículos Entregados</div>
         <div class="metric-value" id="rep-entregados">0</div>
       </div>
       <div class="metric-card">
-        <div style="font-size: 0.85rem; color: var(--text-muted);">Ingresos Totales Recaudados</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Ingresos Recaudados</div>
         <div class="metric-value" id="rep-ingreso-total" style="color: var(--success);">$ 0</div>
       </div>
     </div>
@@ -227,23 +229,6 @@
         </table>
       </div>
     </div>
-  </div>
-
-  <!-- ÁREA OCULTA PARA IMPRIMIR RECIBO -->
-  <div id="area-recibo" style="display: none; padding: 20px; font-family: sans-serif; max-width: 400px; border: 1px solid #000; margin: 0 auto;">
-    <h2 style="text-align: center; margin-bottom: 5px;">TALLER MECÁNICO 360</h2>
-    <p style="text-align: center; font-size: 12px; margin-top: 0;">Comprobante de Pago y Entrega</p>
-    <hr>
-    <p><strong>N° Orden:</strong> <span id="recibo-orden"></span></p>
-    <p><strong>Fecha:</strong> <span id="recibo-fecha"></span></p>
-    <p><strong>Cliente:</strong> <span id="recibo-cliente"></span></p>
-    <p><strong>Vehículo:</strong> <span id="recibo-vehiculo"></span></p>
-    <p><strong>Patente:</strong> <span id="recibo-placa"></span></p>
-    <p><strong>Trabajo:</strong> <span id="recibo-trabajo"></span></p>
-    <hr>
-    <h3 style="text-align: right;">TOTAL PAGADO: $<span id="recibo-monto"></span></h3>
-    <hr>
-    <p style="text-align: center; font-size: 11px;">¡Gracias por su preferencia y confianza!</p>
   </div>
 
   <script>
@@ -277,10 +262,11 @@
         tbody.innerHTML = '';
 
         datos.forEach(item => {
-          if(item.estado === 'Entregado') return; // Se ocultan los entregados del panel de taller
+          if(item.estado === 'Entregado') return;
 
           const tr = document.createElement('tr');
           const estaListo = item.estado === 'Listo';
+          const mecanicoNombre = item.mecanico_asignado || item.mecanico || 'En asignación';
 
           tr.innerHTML = `
             <td>
@@ -292,7 +278,7 @@
               <small style="color:var(--text-muted)">${item.marca || ''} ${item.modelo || ''}</small>
             </td>
             <td>${item.diagnostico_inicial}</td>
-            <td>${item.mecanico_asignado || 'Sin Asignar'}</td>
+            <td><strong>👨‍🔧 ${mecanicoNombre}</strong></td>
             <td><strong>$ ${parseFloat(item.costo || 0).toLocaleString('es-AR')}</strong></td>
             <td>
               <span class="badge ${estaListo ? 'badge-listo' : 'badge-reparacion'}">
@@ -320,17 +306,16 @@
       }
     }
 
-    // MARCAR COMO LISTO Y ENVIAR WHATSAPP DE RETIRO CON HORARIOS
+    // MARCAR COMO LISTO Y NOTIFICAR POR WHATSAPP
     async function marcarComoListo(id, cliente, telefono, vehiculo, placa) {
       try {
         const res = await fetch(`/api/ordenes/${id}/listo`, { method: 'PUT' });
         if (res.ok) {
-          // WhatsApp automático con los horarios de atención incorporados
           const telLimpio = (telefono || '').replace(/[^0-9]/g, '');
           const numFinal = telLimpio.startsWith('54') ? telLimpio : '54' + telLimpio;
           const urlPortalCliente = `${window.location.origin}/cliente.html`;
 
-          const mensajeListo = `Hola *${cliente}*, 👋 ¡Buenas noticias!\n\nTu vehículo *${vehiculo}* (Patente: *${placa}*) ya se encuentra *✅ LISTO PARA RETIRAR* en nuestro taller. 🚘\n\n📍 *Horarios de Atención:*\n• Lunes a Viernes: 8:00 hs a 18:00 hs\n• Sábados: 8:00 hs a 13:00 hs (Medio día)\n\nPuedes ver la orden en el portal:\n${urlPortalCliente}\n\n¡Te esperamos!`;
+          const mensajeListo = `Hola *${cliente}*, 👋 ¡Buenas noticias!\n\nTu vehículo *${vehiculo}* (Patente: *${placa}*) ya se encuentra *✅ LISTO PARA RETIRAR* en nuestro taller. 🚘\n\n📍 *Horarios de Atención:*\n• Lunes a Viernes: 8:00 hs a 18:00 hs\n• Sábados: 8:00 hs a 13:00 hs (Medio día)\n\nPuedes consultar los detalles en tu portal:\n${urlPortalCliente}\n\n¡Te esperamos!`;
 
           window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(mensajeListo)}`, '_blank');
           
@@ -343,27 +328,52 @@
       }
     }
 
-    // ENTREGAR, COBRAR Y EMITIR RECIBO PARA EL CLIENTE
+    // ENTREGAR, COBRAR Y GENERAR VISTA DE IMPRESIÓN LIMPIA DE RECIBO
     async function entregarYCobrar(id, cliente, vehiculo, placa, trabajo, costo) {
       if(!confirm(`¿Confirmar cobro de $${costo} e imprimir recibo para ${cliente}?`)) return;
 
       try {
         const res = await fetch(`/api/ordenes/${id}/entregar`, { method: 'PUT' });
         if (res.ok) {
-          // Llenar datos en el recibo
-          document.getElementById('recibo-orden').innerText = '#' + id;
-          document.getElementById('recibo-fecha').innerText = new Date().toLocaleDateString('es-AR') + ' ' + new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
-          document.getElementById('recibo-cliente').innerText = cliente;
-          document.getElementById('recibo-vehiculo').innerText = vehiculo;
-          document.getElementById('recibo-placa').innerText = placa;
-          document.getElementById('recibo-trabajo').innerText = trabajo;
-          document.getElementById('recibo-monto').innerText = parseFloat(costo).toLocaleString('es-AR');
-
-          // Mostrar e Imprimir Recibo
-          const areaRecibo = document.getElementById('area-recibo');
-          areaRecibo.style.display = 'block';
-          window.print();
-          areaRecibo.style.display = 'none';
+          const fechaHora = new Date().toLocaleString('es-AR');
+          const ventanaImpresion = window.open('', '_blank', 'width=600,height=600');
+          
+          ventanaImpresion.document.write(`
+            <html>
+              <head>
+                <title>Recibo N° ${id}</title>
+                <style>
+                  body { font-family: sans-serif; padding: 20px; color: #000; }
+                  .ticket { max-width: 350px; margin: 0 auto; border: 1px solid #333; padding: 15px; border-radius: 8px; }
+                  h2, h4 { text-align: center; margin: 5px 0; }
+                  hr { border: none; border-top: 1px dashed #000; margin: 10px 0; }
+                  .fila { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
+                  .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 10px; }
+                </style>
+              </head>
+              <body>
+                <div class="ticket">
+                  <h2>TALLER MECÁNICO 360</h2>
+                  <h4>COMPROBANTE DE PAGO</h4>
+                  <hr>
+                  <div class="fila"><span><strong>Orden N°:</strong></span> <span>#${id}</span></div>
+                  <div class="fila"><span><strong>Fecha:</strong></span> <span>${fechaHora}</span></div>
+                  <div class="fila"><span><strong>Cliente:</strong></span> <span>${cliente}</span></div>
+                  <div class="fila"><span><strong>Vehículo:</strong></span> <span>${vehiculo}</span></div>
+                  <div class="fila"><span><strong>Patente:</strong></span> <span>${placa}</span></div>
+                  <div class="fila"><span><strong>Trabajo:</strong></span> <span>${trabajo}</span></div>
+                  <hr>
+                  <div class="total">TOTAL: $${parseFloat(costo).toLocaleString('es-AR')}</div>
+                  <hr>
+                  <p style="text-align:center; font-size: 12px;">¡Gracias por su preferencia!</p>
+                </div>
+                <script>
+                  window.onload = function() { window.print(); window.close(); }
+                <\/script>
+              </body>
+            </html>
+          `);
+          ventanaImpresion.document.close();
 
           cargarTaller();
         }
@@ -372,7 +382,7 @@
       }
     }
 
-    // REGISTRO DE RECEPCIÓN Y WHATSAPP BIENVENIDA
+    // REGISTRO Y ENVIAR BIENVENIDA
     document.getElementById('form-todo-en-uno').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -409,7 +419,6 @@
         if (res.ok) {
           alert(data.mensaje || 'Vehículo ingresado con éxito');
           
-          // Abre WhatsApp de bienvenida con link directo
           const telLimpio = telefonoVal.replace(/[^0-9]/g, '');
           const numFinal = telLimpio.startsWith('54') ? telLimpio : '54' + telLimpio;
           const urlPortalCliente = `${window.location.origin}/cliente.html`;
@@ -428,7 +437,7 @@
       }
     });
 
-    // BÚSQUEDA RÁPIDA DE FECHAS EN REPORTES
+    // BOTONES RÁPIDOS DE FECHAS
     function filtrarReporteRapido(periodo) {
       const hoy = new Date();
       let desde = new Date();
@@ -437,9 +446,14 @@
         desde = hoy;
       } else if (periodo === 'semana') {
         const diaSemana = hoy.getDay() || 7;
-        desde.setDate(hoy.getDate() - diaSemana + 1); // Lunes de esta semana
+        desde.setDate(hoy.getDate() - diaSemana + 1);
       } else if (periodo === 'mes') {
-        desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1); // Día 1 del mes
+        desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      } else if (periodo === 'todos') {
+        document.getElementById('f_desde').value = '';
+        document.getElementById('f_hasta').value = '';
+        cargarReportes();
+        return;
       }
 
       document.getElementById('f_desde').value = desde.toISOString().split('T')[0];
@@ -448,7 +462,7 @@
       cargarReportes();
     }
 
-    // CARGAR REPORTES
+    // CONSULTAR REPORTES
     async function cargarReportes() {
       const desde = document.getElementById('f_desde').value;
       const hasta = document.getElementById('f_hasta').value;
@@ -461,6 +475,7 @@
         const res = await fetch(`/api/reportes/personalizado?${queryParams.toString()}`);
         const data = await res.json();
 
+        document.getElementById('rep-en-proceso').innerText = data.en_proceso || 0;
         document.getElementById('rep-entregados').innerText = data.entregados || 0;
         document.getElementById('rep-ingreso-total').innerText = `$ ${parseFloat(data.ingresos_totales || 0).toLocaleString('es-AR')}`;
 
