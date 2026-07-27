@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Consulta - Taller Mecánico 360</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f1f5f9; color: #334155; }
+    .container { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); text-align: center; }
+    h1 { font-size: 1.5rem; color: #0f172a; margin-bottom: 5px; }
+    p { color: #64748b; font-size: 0.95rem; }
+    
+    input { width: 100%; padding: 12px; font-size: 1.2rem; border: 2px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; text-align: center; text-transform: uppercase; margin: 15px 0; }
+    input:focus { border-color: #2563eb; outline: none; }
+
+    button { background-color: #2563eb; color: white; border: none; padding: 12px 20px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+    button:hover { background-color: #1d4ed8; }
+
+    .card-resultado { margin-top: 25px; text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; }
+    .badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.85rem; display: inline-block; margin-top: 5px; }
+    .badge-reparacion { background-color: #fef08a; color: #854d0e; }
+    .badge-listo { background-color: #bbf7d0; color: #166534; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🚘 Taller Mecánico 360</h1>
+    <p>Consulte el estado actual de su vehículo en tiempo real</p>
+
+    <input type="text" id="c_placa" placeholder="EJ: ABC-999" maxlength="10">
+    <button onclick="consultarCliente()">Consultar Estado</button>
+
+    <div id="res-cliente" style="display: none;"></div>
+  </div>
+
+  <script>
+    async function consultarCliente() {
+      const placa = document.getElementById('c_placa').value.trim();
+      if (!placa) return alert('Por favor, ingresa la patente/placa de tu vehículo.');
+
+      const res = await fetch(`/api/consulta-cliente/${placa}`);
+      const div = document.getElementById('res-cliente');
+      div.style.display = 'block';
+
+      if (!res.ok) {
+        div.innerHTML = `<div class="card-resultado" style="border-left: 5px solid #ef4444; color: #dc2626; text-align: center;">No se encontró ningún vehículo activo registrado con la patente <strong>${placa.toUpperCase()}</strong>.</div>`;
+        return;
+      }
+
+      const o = await res.json();
+      div.innerHTML = `
+        <div class="card-resultado" style="border-left: 5px solid ${o.estado === 'Listo' ? '#059669' : '#d97706'};">
+          <h3 style="margin-top:0;">Hola, ${o.cliente} 👋</h3>
+          <p style="margin: 5px 0;"><strong>Vehículo:</strong> ${o.marca} ${o.modelo} (${o.placa})</p>
+          <p style="margin: 5px 0;"><strong>Trabajo Asignado:</strong> ${o.diagnostico_inicial}</p>
+          <p style="margin: 5px 0;"><strong>Monto Presupuestado:</strong> <span style="color:#059669; font-weight:bold;">$ ${parseFloat(o.costo || 0).toLocaleString('es-AR')} ARS</span></p>
+          <p style="margin: 10px 0 0 0;"><strong>Estado Actual:</strong></p>
+          <span class="badge ${o.estado === 'Listo' ? 'badge-listo' : 'badge-reparacion'}">${o.estado === 'Listo' ? '✅ LISTO PARA RETIRAR' : '🛠️ EN REPARACIÓN'}</span>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
