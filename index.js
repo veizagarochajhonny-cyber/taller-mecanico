@@ -1,16 +1,39 @@
- require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
 
 const app = express();
 app.use(express.json());
+
+// Servir archivos estáticos de la carpeta public
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ----------------------------------------------------
+// RUTAS DE NAVEGACIÓN (VISTAS)
+// ----------------------------------------------------
+
+// 1. La raíz (/) entrega DIRECTO la vista de consulta para clientes
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cliente.html'));
+});
+
+// 2. La ruta (/admin) entrega el panel del taller/administrador
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ----------------------------------------------------
+// BASE DE DATOS POSTGRESQL
+// ----------------------------------------------------
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+// ----------------------------------------------------
+// RUTAS DE LA API
+// ----------------------------------------------------
 
 // 1. REGISTRO RECEPCIÓN Y ORDEN COMPLETA
 app.post('/api/recepcion-completa', async (req, res) => {
