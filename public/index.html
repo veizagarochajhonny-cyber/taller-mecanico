@@ -3,275 +3,295 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Taller Mecánico 360 - Sistema de Gestión</title>
+  <title>Taller Mecánico 360 - Panel Administrador</title>
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 15px; background-color: #f1f5f9; color: #334155; }
-    .container { max-width: 1100px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    h1, h2, h3 { color: #0f172a; word-wrap: break-word; }
-    
-    /* PANTALLA DE LOGIN */
-    #modal-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 15px; }
-    .login-box { background: white; padding: 25px; border-radius: 12px; text-align: center; width: 100%; max-width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-    .login-box input { width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 1.2rem; }
-    
-    /* HEADER & TABS */
-    .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-    .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; overflow-x: auto; padding-bottom: 5px; }
-    .tab-btn { padding: 10px 16px; border: none; background: none; font-size: 0.95rem; font-weight: bold; cursor: pointer; color: #64748b; white-space: nowrap; }
-    .tab-btn.active { color: #2563eb; border-bottom: 3px solid #2563eb; }
-    
-    .section { display: none; }
-    .section.active { display: block; }
-
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 18px; border-radius: 8px; margin-bottom: 20px; }
-    
-    /* GRIDS RESPONSIVOS */
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-    
-    .form-group { display: flex; flex-direction: column; margin-bottom: 12px; }
-    .form-group label { font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; }
-    .form-group input, .form-group textarea, .form-group select { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.95rem; width: 100%; }
-
-    button { background-color: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 5px; font-weight: bold; cursor: pointer; width: auto; }
-    button:hover { background-color: #1d4ed8; }
-    .btn-green { background-color: #059669; }
-    .btn-green:hover { background-color: #047857; }
-    .btn-yellow { background-color: #d97706; color: white; }
-    .btn-yellow:hover { background-color: #b45309; }
-
-    /* TABLAS RESPONSIVAS CON SCROLL HORIZONTAL */
-    .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 6px; border: 1px solid #e2e8f0; }
-    table { width: 100%; border-collapse: collapse; min-width: 600px; }
-    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-    th { background-color: #1e293b; color: white; font-size: 0.85rem; }
-
-    .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; display: inline-block; }
-    .badge-reparacion { background-color: #fef08a; color: #854d0e; }
-    .badge-listo { background-color: #bbf7d0; color: #166534; }
-    
-    .metric-card { background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; text-align: center; }
-    .metric-card h2 { margin: 5px 0; color: #1d4ed8; }
-
-    #recibo-impresion { display: none; padding: 20px; border: 1px dashed #333; max-width: 400px; margin: auto; }
-
-    @media (max-width: 600px) {
-      body { margin: 8px; }
-      .container { padding: 12px; }
-      h1 { font-size: 1.4rem; }
-      .header-top { flex-direction: column; align-items: flex-start; }
-      button { width: 100%; margin-top: 5px; }
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
     }
 
-    @media print {
-      body * { visibility: hidden; }
-      #recibo-impresion, #recibo-impresion * { visibility: visible; }
-      #recibo-impresion { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
-      .nav-tabs, button, form, .no-print, .container, #modal-login { display: none !important; }
-    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 12px; }
+
+    .header-container { max-width: 1000px; margin: 0 auto 15px auto; text-align: center; }
+    .header-container h1 { font-size: 1.5rem; margin: 0 0 10px 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    
+    .btn-portal-publico { display: inline-block; background-color: #e0f2fe; color: #0369a1; text-decoration: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; border: 1px solid #bae6fd; margin-bottom: 10px; }
+
+    .tabs { display: flex; gap: 5px; max-width: 1000px; margin: 0 auto 15px auto; border-bottom: 2px solid var(--border); overflow-x: auto; }
+    .tab-btn { background: none; border: none; padding: 10px 15px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; font-size: 0.95rem; white-space: nowrap; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .tab-content { display: none; max-width: 1000px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+
+    .card { background: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 15px; }
+    .card h2 { font-size: 1.2rem; margin-top: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: var(--text-muted); }
+    .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; background: #fff; }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media(min-width: 600px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+    .btn-primary { background-color: var(--primary); color: white; }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+
+    .tabla-responsive { width: 100%; overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border); }
+    th { background: #f1f5f9; color: var(--text-muted); font-weight: 600; }
+
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
+    .badge-reparacion { background-color: #fef3c7; color: #b45309; }
+    .badge-listo { background-color: #d1fae5; color: #047857; }
+
+    .metric-card { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
+    .metric-value { font-size: 1.5rem; font-weight: bold; color: var(--primary); margin-top: 5px; }
+
+    /* Modal Login */
+    #modal-login { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.9); display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 15px; }
+    .modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 350px; text-align: center; }
   </style>
 </head>
 <body>
 
-  <!-- MODAL DE LOGIN / CLAVE DE ACCESO -->
+  <!-- MODAL DE LOGIN -->
   <div id="modal-login">
-    <div class="login-box">
-      <h2>🔐 Acceso Sistema</h2>
-      <p style="font-size: 0.85rem; color: #64748b;">Ingrese la clave de administrador para acceder al taller y reportes:</p>
-      <input type="password" id="clave-ingreso" placeholder="****" maxlength="10">
-      <br>
-      <button onclick="validarAcceso()" style="width: 100%; padding: 10px;">Ingresar al Sistema</button>
-      <p id="err-login" style="color: red; font-size: 0.8rem; display: none; margin-top: 10px;">Clave incorrecta</p>
-      <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
-      <p style="font-size: 0.8rem;">¿Sos cliente? <a href="/cliente.html" target="_blank" style="color: #2563eb; font-weight: bold;">Ir a Consulta de Vehículo</a></p>
+    <div class="modal-content">
+      <h2>🔐 Acceso Taller</h2>
+      <p style="font-size: 0.85rem; color: #64748b;">Ingrese la clave del taller para administrar</p>
+      <input type="password" id="clave-input" class="form-control" placeholder="Contraseña" style="text-align: center; margin: 15px 0;">
+      <button class="btn btn-primary" onclick="validarClave()">Ingresar</button>
     </div>
   </div>
 
-  <div class="container" id="contenido-sistema" style="display: none;">
-    <div class="header-top no-print">
-      <h1>⚙️ Taller Mecánico 360</h1>
-      <a href="/cliente.html" target="_blank" style="background: #e0f2fe; color: #0369a1; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold; display: inline-block;">🌐 Ver Portal Público de Clientes</a>
-    </div>
+  <div class="header-container">
+    <h1>⚙️ Taller Mecánico 360</h1>
+    <a href="/cliente.html" target="_blank" class="btn-portal-publico">🌐 Ver Portal Público de Clientes</a>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="cambiarTab('tab-recepcion', this)">👨‍🔧 Recepción y Taller</button>
+    <button class="tab-btn" onclick="cambiarTab('tab-reportes', this)">📊 Reportes del Negocio</button>
+  </div>
+
+  <!-- TAB 1: RECEPCIÓN Y TALLER -->
+  <div id="tab-recepcion" class="tab-content active">
     
-    <div class="nav-tabs no-print">
-      <button class="tab-btn active" onclick="cambiarTab('taller')">👨‍🔧 Recepción y Taller</button>
-      <button class="tab-btn" onclick="cambiarTab('reportes')">📊 Reportes del Dueño</button>
-    </div>
-
-    <!-- SECCIÓN 1: TALLER -->
-    <div id="sec-taller" class="section active">
-      <div class="card no-print">
-        <h3>📋 Recepción y Registro Completo</h3>
-        <form id="form-todo-en-uno">
-          <div class="grid-2">
-            <div class="form-group"><label>Nombre del Cliente</label><input type="text" id="r_nombre" required placeholder="Carlos Ruiz"></div>
-            <div class="form-group"><label>Teléfono (WhatsApp)</label><input type="text" id="r_telefono" required placeholder="11556854525"></div>
-            <div class="form-group"><label>Placa / Patente</label><input type="text" id="r_placa" required placeholder="ABC-999"></div>
-            <div class="form-group"><label>Marca y Modelo</label><input type="text" id="r_vehiculo" required placeholder="Honda Civic"></div>
-          </div>
-
+    <div class="card">
+      <h2>📋 Recepción y Registro Completo</h2>
+      <form id="form-todo-en-uno">
+        <div class="grid-2">
           <div class="form-group">
-            <label>Diagnóstico Inicial</label>
-            <textarea id="r_diagnostico" rows="2" required placeholder="Cambio de freno y mantenimiento..."></textarea>
+            <label>Nombre del Cliente</label>
+            <input type="text" id="r_nombre" class="form-control" placeholder="Ej: Carlos Ruiz" required>
           </div>
-
-          <div class="grid-3">
-            <div class="form-group"><label>Mecánico Asignado</label><input type="text" id="r_mecanico" placeholder="Pedro Gómez"></div>
-            <div class="form-group"><label>Costo Estimado ($ ARS)</label><input type="number" id="r_costo" step="0.01" required placeholder="20000"></div>
-            <div class="form-group">
-              <label style="color: #b91c1c;">¿Aprobado por el Cliente?</label>
-              <select id="r_aprobado" required>
-                <option value="true">SI - Procesar e Ingresar</option>
-                <option value="false">NO - Cancelar Orden</option>
-              </select>
-            </div>
+          <div class="form-group">
+            <label>Teléfono (WhatsApp)</label>
+            <input type="tel" id="r_telefono" class="form-control" placeholder="Ej: 1155684525" required>
           </div>
-          <button type="submit" class="btn-green" style="width: 100%; margin-top: 10px;">Procesar e Ingresar al Taller</button>
-        </form>
-      </div>
+        </div>
 
-      <h2>🛠️ Vehículos Actualmente en Taller</h2>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>N° Orden</th>
-              <th>Placa / Vehículo</th>
-              <th>Cliente / Tel.</th>
-              <th>Diagnóstico</th>
-              <th>Costo ($ ARS)</th>
-              <th>Estado</th>
-              <th class="no-print">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-taller">
-            <tr><td colspan="7">Cargando...</td></tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Placa / Patente</label>
+            <input type="text" id="r_placa" class="form-control" placeholder="Ej: ABC-999" required style="text-transform: uppercase;">
+          </div>
+          <div class="form-group">
+            <label>Marca y Modelo</label>
+            <input type="text" id="r_vehiculo" class="form-control" placeholder="Ej: Honda Civic" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Diagnóstico Inicial / Trabajo a Realizar</label>
+          <input type="text" id="r_diagnostico" class="form-control" placeholder="Ej: Cambio de aceite y revisión de frenos" required>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Mecánico Asignado</label>
+            <select id="r_mecanico" class="form-control">
+              <option value="Sin Asignar">Seleccionar Mecánico...</option>
+              <option value="Juan Pérez">Juan Pérez</option>
+              <option value="Carlos Gómez">Carlos Gómez</option>
+              <option value="Roberto Díaz">Roberto Díaz</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Costo Presupuestado ($ ARS)</label>
+            <input type="number" id="r_costo" class="form-control" placeholder="Ej: 45000" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Aprobación del Cliente</label>
+          <select id="r_aprobado" class="form-control">
+            <option value="true">✅ Aprobado</option>
+            <option value="false">⏳ Pendiente de Aprobación</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">🚗 Procesar e Ingresar al Taller</button>
+      </form>
     </div>
 
-    <!-- SECCIÓN 2: REPORTES Y BALANCE DEL DUEÑO -->
-    <div id="sec-reportes" class="section">
-      <h2>📊 Panel de Auditoría e Ingresos ($ ARS)</h2>
-      
-      <div class="card no-print">
-        <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
-          <div class="form-group" style="flex: 1; min-width: 140px;">
-            <label>Fecha Desde:</label>
-            <input type="date" id="rep_desde">
-          </div>
-          <div class="form-group" style="flex: 1; min-width: 140px;">
-            <label>Fecha Hasta:</label>
-            <input type="date" id="rep_hasta">
-          </div>
-          <div style="display: flex; gap: 5px; flex-wrap: wrap; width: 100%;">
-            <button onclick="consultarReportePersonalizado()" style="flex: 1;">🔎 Filtrar</button>
-            <button class="btn-green" onclick="filtrarHoy()" style="flex: 1;">Hoy</button>
-            <button class="btn-yellow" onclick="filtrarMes()" style="flex: 1;">Este Mes</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid-3" style="margin-bottom: 25px;">
-        <div class="metric-card">
-          <p>Autos Entregados en el Rango</p>
-          <h2 id="rep-entregados">0</h2>
-        </div>
-        <div class="metric-card">
-          <p>Autos Activos en Taller Hoy</p>
-          <h2 id="rep-proceso">0</h2>
-        </div>
-        <div class="metric-card" style="background: #f0fdf4; border-color: #bbf7d0;">
-          <p>Total Ingresos Recaudados ($ ARS)</p>
-          <h2 id="rep-ingresos" style="color: #15803d;">$ 0 ARS</h2>
-        </div>
-      </div>
-
-      <h3>📄 Detalle de Vehículos Cobrados en el Rango Seleccionado</h3>
-      <div class="table-responsive">
+    <!-- LISTA DE VEHÍCULOS ACTIVOS -->
+    <div class="card">
+      <h2>🚘 Vehículos en Taller</h2>
+      <div class="tabla-responsive">
         <table>
           <thead>
             <tr>
-              <th>Fecha / Hora</th>
-              <th>N° Orden</th>
-              <th>Vehículo</th>
               <th>Cliente</th>
-              <th>Trabajo Realizado</th>
-              <th>Monto Cobrado ($ ARS)</th>
+              <th>Vehículo / Patente</th>
+              <th>Mecánico</th>
+              <th>Estado</th>
+              <th>Acción</th>
             </tr>
           </thead>
-          <tbody id="tabla-reporte-detalle">
-            <tr><td colspan="6">Seleccione un rango de fechas o presione un botón de filtro.</td></tr>
-          </tbody>
+          <tbody id="tabla-mantenimiento"></tbody>
         </table>
       </div>
     </div>
 
   </div>
 
-  <!-- PLANTILLA DE RECIBO DE IMPRESIÓN -->
-  <div id="recibo-impresion">
-    <h2 style="text-align: center; margin-bottom: 5px;">🔧 TALLER MECÁNICO 360</h2>
-    <p style="text-align: center; font-size: 0.85rem; margin-top: 0;">Comprobante de Pago y Entrega</p>
-    <hr>
-    <p><strong>N° Orden:</strong> #<span id="rec-orden"></span></p>
-    <p><strong>Fecha:</strong> <span id="rec-fecha"></span></p>
-    <p><strong>Cliente:</strong> <span id="rec-cliente"></span></p>
-    <p><strong>Vehículo:</strong> <span id="rec-vehiculo"></span> (<span id="rec-placa"></span>)</p>
-    <p><strong>Servicio Realizado:</strong> <span id="rec-diagnostico"></span></p>
-    <hr>
-    <h3 style="text-align: right;">TOTAL PAGADO: $<span id="rec-monto"></span> ARS</h3>
-    <hr>
-    <p style="text-align: center; font-size: 0.8rem; margin-top: 20px;">
-      ¡Muchas gracias por su preferencia!<br>
-      Garantía de servicio asegurada.
-    </p>
+  <!-- TAB 2: REPORTES -->
+  <div id="tab-reportes" class="tab-content">
+    <div class="grid-2" style="margin-bottom: 15px;">
+      <div class="metric-card">
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Total de Clientes</div>
+        <div class="metric-value" id="rep-total-clientes">0</div>
+      </div>
+      <div class="metric-card">
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Ingreso Estimado ($ ARS)</div>
+        <div class="metric-value" id="rep-ingreso-total" style="color: var(--success);">$ 0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📊 Resumen por Mecánico</h2>
+      <div class="tabla-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Mecánico</th>
+              <th>Autos Asignados</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-mecanicos"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script>
-    const CLAVE_ADMIN = "1234";
-
-    function validarAcceso() {
-      const pass = document.getElementById('clave-ingreso').value;
-      if (pass === CLAVE_ADMIN) {
+    function validarClave() {
+      const clave = document.getElementById('clave-input').value;
+      if (clave === '1234') {
         document.getElementById('modal-login').style.display = 'none';
-        document.getElementById('contenido-sistema').style.display = 'block';
         cargarTaller();
       } else {
-        document.getElementById('err-login').style.display = 'block';
+        alert('Contraseña incorrecta');
       }
     }
 
-    function cambiarTab(tab) {
+    function cambiarTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       
-      if(tab === 'taller') {
-        document.querySelectorAll('.tab-btn')[0].classList.add('active');
-        document.getElementById('sec-taller').classList.add('active');
-        cargarTaller();
-      } else if(tab === 'reportes') {
-        document.querySelectorAll('.tab-btn')[1].classList.add('active');
-        document.getElementById('sec-reportes').classList.add('active');
-        filtrarHoy();
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+
+      if (tabId === 'tab-reportes') cargarReportes();
+    }
+
+    async function cargarTaller() {
+      try {
+        const res = await fetch('/api/mantenimientos');
+        const datos = await res.json();
+        
+        const tbody = document.getElementById('tabla-mantenimiento');
+        tbody.innerHTML = '';
+
+        datos.forEach(item => {
+          const tr = document.createElement('tr');
+          const estaListo = item.estado === 'Listo';
+
+          tr.innerHTML = `
+            <td>
+              <strong>${item.cliente || 'Sin Nombre'}</strong><br>
+              <small style="color:var(--text-muted)">${item.telefono || ''}</small>
+            </td>
+            <td>
+              <strong>${item.placa}</strong><br>
+              <small style="color:var(--text-muted)">${item.marca || ''} ${item.modelo || ''}</small>
+            </td>
+            <td>${item.mecanico || 'Sin Asignar'}</td>
+            <td>
+              <span class="badge ${estaListo ? 'badge-listo' : 'badge-reparacion'}">
+                ${item.estado}
+              </span>
+            </td>
+            <td>
+              <button onclick="cambiarEstado('${item.placa}', '${estaListo ? 'En reparación' : 'Listo'}')" 
+                      style="padding:6px 10px; border:none; border-radius:5px; cursor:pointer; font-size:0.8rem; background:${estaListo ? '#f1f5f9' : '#10b981'}; color:${estaListo ? '#334155' : 'white'};">
+                ${estaListo ? 'Reabrir' : 'Marcar Listo'}
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Error cargando taller:', err);
       }
     }
 
-    // Registrar Orden
+    async function cambiarEstado(placa, nuevoEstado) {
+      try {
+        const res = await fetch(`/api/mantenimientos/${placa}`, {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ estado: nuevoEstado })
+        });
+        if (res.ok) {
+          cargarTaller();
+        }
+      } catch (err) {
+        alert('Error al actualizar el estado');
+      }
+    }
+
+    // REGISTRO Y ENVÍO AUTOMÁTICO DE WHATSAPP
     document.getElementById('form-todo-en-uno').addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      const nombreVal = document.getElementById('r_nombre').value.trim();
+      const telefonoVal = document.getElementById('r_telefono').value.trim();
+      const placaVal = document.getElementById('r_placa').value.toUpperCase().trim();
       const textoVehiculo = document.getElementById('r_vehiculo').value.trim();
+      
       const partesVehiculo = textoVehiculo.split(' ');
       const marcaVal = partesVehiculo[0] || 'Auto';
       const modeloVal = partesVehiculo.slice(1).join(' ') || 'General';
 
       const body = {
-        nombre: document.getElementById('r_nombre').value,
-        telefono: document.getElementById('r_telefono').value,
-        placa: document.getElementById('r_placa').value,
+        nombre: nombreVal,
+        telefono: telefonoVal,
+        placa: placaVal,
         marca: marcaVal,
         modelo: modeloVal,
         mecanico: document.getElementById('r_mecanico').value,
@@ -290,7 +310,18 @@
         const data = await res.json();
         
         if (res.ok) {
-          alert(data.mensaje);
+          alert(data.mensaje || 'Vehículo ingresado con éxito');
+          
+          // GENERAR LINK Y MENSAJE DE WHATSAPP AUTOMÁTICO
+          const telLimpio = telefonoVal.replace(/[^0-9]/g, '');
+          const numFinal = telLimpio.startsWith('54') ? telLimpio : '54' + telLimpio;
+          const urlPortalCliente = `${window.location.origin}/cliente.html`;
+
+          const mensajeBienvenida = `Hola *${nombreVal}*, ¡bienvenido a *Taller Mecánico 360*! 🛠️\n\nHemos ingresado tu vehículo *${marcaVal} ${modeloVal}* (Patente: *${placaVal}*) al taller.\n\nPuedes hacer el seguimiento en vivo del estado de tu vehículo ingresando tu patente en nuestro portal:\n${urlPortalCliente}\n\n¡Gracias por confiar en nosotros! 🚘`;
+
+          // Abrir WhatsApp en nueva pestaña
+          window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(mensajeBienvenida)}`, '_blank');
+
           document.getElementById('form-todo-en-uno').reset();
           cargarTaller();
         } else {
@@ -301,132 +332,35 @@
       }
     });
 
-    // Cargar Taller
-    async function cargarTaller() {
+    async function cargarReportes() {
       try {
-        const res = await fetch('/api/ordenes');
-        const ordenes = await res.json();
-        const tbody = document.getElementById('tabla-taller');
-        tbody.innerHTML = '';
+        const resClientes = await fetch('/api/clientes');
+        const clientes = await resClientes.json();
+        document.getElementById('rep-total-clientes').innerText = clientes.length;
 
-        const activas = ordenes.filter(o => o.estado !== 'Entregado');
+        const resMantenimientos = await fetch('/api/mantenimientos');
+        const mantenimientos = await resMantenimientos.json();
 
-        if (activas.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7">No hay vehículos en taller actualmente.</td></tr>';
-          return;
+        let totalIngreso = 0;
+        const contexMecanicos = {};
+
+        mantenimientos.forEach(m => {
+          totalIngreso += parseFloat(m.costo || 0);
+          const mec = m.mecanico || 'Sin Asignar';
+          contexMecanicos[mec] = (contexMecanicos[mec] || 0) + 1;
+        });
+
+        document.getElementById('rep-ingreso-total').innerText = `$ ${totalIngreso.toLocaleString('es-AR')}`;
+
+        const tbodyMec = document.getElementById('tabla-mecanicos');
+        tbodyMec.innerHTML = '';
+        for (const [mecanico, cant] of Object.entries(contexMecanicos)) {
+          tbodyMec.innerHTML += `<tr><td>${mecanico}</td><td><strong>${cant}</strong> auto(s)</td></tr>`;
         }
 
-        activas.forEach(o => {
-          const ordenJson = JSON.stringify(o).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>#${o.id}</strong></td>
-              <td>${o.marca} ${o.modelo} <br><strong>(${o.placa})</strong></td>
-              <td>${o.cliente} <br><small>📲 ${o.telefono}</small></td>
-              <td>${o.diagnostico_inicial}</td>
-              <td><strong>$ ${parseFloat(o.costo || 0).toLocaleString('es-AR')} ARS</strong></td>
-              <td><span class="badge ${o.estado === 'Listo' ? 'badge-listo' : 'badge-reparacion'}">${o.estado}</span></td>
-              <td class="no-print">
-                ${o.estado === 'En Reparacion' ? 
-                  `<button onclick="marcarListo(${o.id}, '${o.telefono}', '${o.cliente}', '${o.marca} ${o.modelo}', ${o.costo})" class="btn-yellow" style="font-size:0.75rem;">📲 Reparado (Notificar)</button>` : 
-                  `<button onclick='marcarEntregado(${ordenJson})' class="btn-green" style="font-size:0.75rem;">💵 Cobrar y Entregar</button>`
-                }
-              </td>
-            </tr>
-          `;
-        });
       } catch (err) {
-        console.error('Error al cargar taller:', err);
+        console.error('Error cargando reportes:', err);
       }
-    }
-
-    // Notificación WhatsApp al terminar
-    async function marcarListo(id, telefono, cliente, auto, costo) {
-      const res = await fetch(`/api/ordenes/${id}/listo`, { method: 'PUT' });
-      if (res.ok) {
-        const telLimpio = telefono.replace(/[^0-9]/g, '');
-        const numFinal = telLimpio.startsWith('54') ? telLimpio : '54' + telLimpio;
-
-        const mensajeWS = `Hola *${cliente}*, le saludamos de *Taller Mecánico 360* 🛠️. Le informamos que su vehículo *${auto}* ya se encuentra totalmente reparado y listo para ser entregado.\n\nTotal a cancelar: *$ ${parseFloat(costo).toLocaleString('es-AR')} ARS*.\n\nPuede consultar el estado en vivo ingresando su placa aquí:\n${window.location.origin}/cliente.html`;
-        window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(mensajeWS)}`, '_blank');
-        cargarTaller();
-      }
-    }
-
-    // Cobro y Recibo
-    async function marcarEntregado(o) {
-      if (confirm(`¿Confirmar cobro total de $ ${parseFloat(o.costo).toLocaleString('es-AR')} ARS y entrega del vehículo?`)) {
-        await fetch(`/api/ordenes/${o.id}/entregar`, { method: 'PUT' });
-
-        document.getElementById('rec-orden').innerText = o.id;
-        document.getElementById('rec-fecha').innerText = new Date().toLocaleDateString('es-AR');
-        document.getElementById('rec-cliente').innerText = o.cliente;
-        document.getElementById('rec-vehiculo').innerText = `${o.marca} ${o.modelo}`;
-        document.getElementById('rec-placa').innerText = o.placa;
-        document.getElementById('rec-diagnostico').innerText = o.diagnostico_inicial;
-        document.getElementById('rec-monto').innerText = parseFloat(o.costo).toLocaleString('es-AR');
-
-        window.print();
-
-        const telLimpio = o.telefono.replace(/[^0-9]/g, '');
-        const numFinal = telLimpio.startsWith('54') ? telLimpio : '54' + telLimpio;
-
-        const msjAgradecimiento = `Estimado(a) *${o.cliente}*:\n\nMuchas gracias por su preferencia y por confiar su vehículo *${o.marca} ${o.modelo} (${o.placa})* a *Taller Mecánico 360* 🤝.\n\nConfirmamos la cancelación total del pago de *$ ${parseFloat(o.costo).toLocaleString('es-AR')} ARS*.\n\n¡Ha sido un placer atenderle! 🚘✨`;
-        window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(msjAgradecimiento)}`, '_blank');
-
-        cargarTaller();
-      }
-    }
-
-    // Reportes
-    async function consultarReportePersonalizado() {
-      const desde = document.getElementById('rep_desde').value;
-      const hasta = document.getElementById('rep_hasta').value;
-
-      const res = await fetch(`/api/reportes/personalizado?desde=${desde}&hasta=${hasta}`);
-      const data = await res.json();
-
-      document.getElementById('rep-entregados').innerText = data.entregados ?? 0;
-      document.getElementById('rep-proceso').innerText = data.en_proceso ?? 0;
-      document.getElementById('rep-ingresos').innerText = `$ ${parseFloat(data.ingresos_totales || 0).toLocaleString('es-AR')} ARS`;
-
-      const tbody = document.getElementById('tabla-reporte-detalle');
-      tbody.innerHTML = '';
-
-      if (!data.servicios || data.servicios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6">No se registraron cobros en el rango seleccionado.</td></tr>';
-        return;
-      }
-
-      data.servicios.forEach(s => {
-        const fecha = new Date(s.created_at).toLocaleDateString('es-AR') + ' ' + new Date(s.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        tbody.innerHTML += `
-          <tr>
-            <td><small>${fecha}</small></td>
-            <td><strong>#${s.id}</strong></td>
-            <td>${s.marca} ${s.modelo} <br><strong>(${s.placa})</strong></td>
-            <td>${s.cliente}</td>
-            <td>${s.diagnostico_inicial}</td>
-            <td style="color:#059669; font-weight:bold;">+$ ${parseFloat(s.costo).toLocaleString('es-AR')} ARS</td>
-          </tr>
-        `;
-      });
-    }
-
-    function filtrarHoy() {
-      const hoy = new Date().toISOString().split('T')[0];
-      document.getElementById('rep_desde').value = hoy;
-      document.getElementById('rep_hasta').value = hoy;
-      consultarReportePersonalizado();
-    }
-
-    function filtrarMes() {
-      const ahora = new Date();
-      const primerDia = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString().split('T')[0];
-      const ultimoDia = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0).toISOString().split('T')[0];
-      document.getElementById('rep_desde').value = primerDia;
-      document.getElementById('rep_hasta').value = ultimoDia;
-      consultarReportePersonalizado();
     }
   </script>
 </body>
