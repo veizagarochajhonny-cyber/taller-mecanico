@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Taller Mecánico 360 - Panel Administrador</title>
+  <title>Taller Mecánico 360 - Panel de Control</title>
   <style>
     :root {
       --primary: #2563eb;
@@ -78,7 +78,7 @@
   </div>
 
   <div class="header-container">
-    <h1>⚙️ Taller Mecánico 360</h1>
+    <h1>🚘 Taller Mecánico 360</h1>
     <a href="/cliente.html" target="_blank" class="btn-portal-publico">🌐 Ver Portal Público de Clientes</a>
   </div>
 
@@ -122,24 +122,19 @@
 
         <div class="grid-2">
           <div class="form-group">
-            <label>Mecánico Asignado</label>
-            <select id="r_mecanico" class="form-control">
-              <option value="Sin Asignar">Seleccionar Mecánico...</option>
-              <option value="Juan Pérez">Juan Pérez</option>
-              <option value="Carlos Gómez">Carlos Gómez</option>
-              <option value="Roberto Díaz">Roberto Díaz</option>
-            </select>
+            <label>Mecánico Asignado (Escribir nombre)</label>
+            <input type="text" id="r_mecanico" class="form-control" placeholder="Ej: Juan Pérez" required>
           </div>
           <div class="form-group">
             <label>Costo Presupuestado ($ ARS)</label>
-            <input type="number" id="r_costo" class="form-control" placeholder="Ej: 45000" step="0.01">
+            <input type="number" id="r_costo" class="form-control" placeholder="Ej: 45000" step="0.01" required>
           </div>
         </div>
 
         <div class="form-group">
-          <label>Aprobación del Cliente</label>
+          <label>Aprobación del Presupuesto por el Cliente</label>
           <select id="r_aprobado" class="form-control">
-            <option value="true">✅ Aprobado</option>
+            <option value="true">✅ Presupuesto Aprobado</option>
             <option value="false">⏳ Pendiente de Aprobación</option>
           </select>
         </div>
@@ -150,14 +145,15 @@
 
     <!-- LISTA DE VEHÍCULOS ACTIVOS -->
     <div class="card">
-      <h2>🚘 Vehículos en Taller</h2>
+      <h2>🚘 Vehículos en Taller (Activos)</h2>
       <div class="tabla-responsive">
         <table>
           <thead>
             <tr>
               <th>Cliente</th>
               <th>Vehículo / Patente</th>
-              <th>Mecánico</th>
+              <th>Diagnóstico</th>
+              <th>Costo</th>
               <th>Estado</th>
               <th>Acción</th>
             </tr>
@@ -171,28 +167,46 @@
 
   <!-- TAB 2: REPORTES -->
   <div id="tab-reportes" class="tab-content">
+    <div class="card">
+      <h2>📅 Filtro de Reportes por Fecha</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Desde Fecha</label>
+          <input type="date" id="f_desde" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Hasta Fecha</label>
+          <input type="date" id="f_hasta" class="form-control">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="cargarReportes()" style="margin-top:5px;">🔍 Buscar Reporte</button>
+    </div>
+
     <div class="grid-2" style="margin-bottom: 15px;">
       <div class="metric-card">
-        <div style="font-size: 0.85rem; color: var(--text-muted);">Total de Clientes</div>
-        <div class="metric-value" id="rep-total-clientes">0</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Vehículos Entregados / Cobrados</div>
+        <div class="metric-value" id="rep-entregados">0</div>
       </div>
       <div class="metric-card">
-        <div style="font-size: 0.85rem; color: var(--text-muted);">Ingreso Estimado ($ ARS)</div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Ingresos Totales Recaudados</div>
         <div class="metric-value" id="rep-ingreso-total" style="color: var(--success);">$ 0</div>
       </div>
     </div>
 
     <div class="card">
-      <h2>📊 Resumen por Mecánico</h2>
+      <h2>📜 Detalle de Servicios Cobrados y Entregados</h2>
       <div class="tabla-responsive">
         <table>
           <thead>
             <tr>
-              <th>Mecánico</th>
-              <th>Autos Asignados</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Vehículo</th>
+              <th>Trabajo Realizado</th>
+              <th>Monto ($)</th>
             </tr>
           </thead>
-          <tbody id="tabla-mecanicos"></tbody>
+          <tbody id="tabla-reporte-detalle"></tbody>
         </table>
       </div>
     </div>
@@ -219,63 +233,99 @@
       if (tabId === 'tab-reportes') cargarReportes();
     }
 
+    // CARGAR ORDENES ACTIVAS DEL TALLER
     async function cargarTaller() {
       try {
-        const res = await fetch('/api/mantenimientos');
+        const res = await fetch('/api/ordenes');
         const datos = await res.json();
         
         const tbody = document.getElementById('tabla-mantenimiento');
         tbody.innerHTML = '';
 
         datos.forEach(item => {
+          if(item.estado === 'Entregado') return; // Ocultar los ya entregados del listado activo
+
           const tr = document.createElement('tr');
           const estaListo = item.estado === 'Listo';
 
           tr.innerHTML = `
             <td>
               <strong>${item.cliente || 'Sin Nombre'}</strong><br>
-              <small style="color:var(--text-muted)">${item.telefono || ''}</small>
+              <small style="color:var(--text-muted)">📱 ${item.telefono || ''}</small>
             </td>
             <td>
               <strong>${item.placa}</strong><br>
               <small style="color:var(--text-muted)">${item.marca || ''} ${item.modelo || ''}</small>
             </td>
-            <td>${item.mecanico || 'Sin Asignar'}</td>
+            <td>${item.diagnostico_inicial}</td>
+            <td><strong>$ ${parseFloat(item.costo || 0).toLocaleString('es-AR')}</strong></td>
             <td>
               <span class="badge ${estaListo ? 'badge-listo' : 'badge-reparacion'}">
-                ${item.estado}
+                ${estaListo ? '✅ LISTO' : '🛠️ EN REPARACIÓN'}
               </span>
             </td>
-            <td>
-              <button onclick="cambiarEstado('${item.placa}', '${estaListo ? 'En reparación' : 'Listo'}')" 
-                      style="padding:6px 10px; border:none; border-radius:5px; cursor:pointer; font-size:0.8rem; background:${estaListo ? '#f1f5f9' : '#10b981'}; color:${estaListo ? '#334155' : 'white'};">
-                ${estaListo ? 'Reabrir' : 'Marcar Listo'}
-              </button>
+            <td style="display: flex; gap: 5px; flex-wrap: wrap;">
+              ${!estaListo ? `
+                <button onclick="marcarComoListo(${item.id}, '${item.cliente}', '${item.telefono}', '${item.marca} ${item.modelo}', '${item.placa}')" 
+                        style="padding:6px 10px; border:none; border-radius:5px; cursor:pointer; font-size:0.8rem; background:#10b981; color:white; font-weight:bold;">
+                  ✅ Marcar Listo + WhatsApp
+                </button>
+              ` : `
+                <button onclick="entregarYCobrar(${item.id})" 
+                        style="padding:6px 10px; border:none; border-radius:5px; cursor:pointer; font-size:0.8rem; background:#2563eb; color:white; font-weight:bold;">
+                  💰 Entregar y Cobrar
+                </button>
+              `}
             </td>
           `;
           tbody.appendChild(tr);
         });
       } catch (err) {
-        console.error('Error cargando taller:', err);
+        console.error('Error cargando ordenes:', err);
       }
     }
 
-    async function cambiarEstado(placa, nuevoEstado) {
+    // MARCAR ORDEN COMO LISTA Y ENVIAR WHATSAPP DE RETIRO
+    async function marcarComoListo(id, cliente, telefono, vehiculo, placa) {
+      if(!confirm(`¿Desea marcar como LISTO el vehículo ${placa} y notificar al cliente?`)) return;
+
       try {
-        const res = await fetch(`/api/mantenimientos/${placa}`, {
-          method: 'PUT',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ estado: nuevoEstado })
-        });
+        const res = await fetch(`/api/ordenes/${id}/listo`, { method: 'PUT' });
         if (res.ok) {
+          // Abrir WhatsApp notificando que está listo
+          const telLimpio = (telefono || '').replace(/[^0-9]/g, '');
+          const numFinal = telLimpio.startsWith('54') ? telLimpio : '54' + telLimpio;
+          const urlPortalCliente = `${window.location.origin}/cliente.html`;
+
+          const mensajeListo = `Hola *${cliente}*, 👋 ¡Buenas noticias!\n\nTu vehículo *${vehiculo}* (Patente: *${placa}*) ya se encuentra *✅ LISTO PARA RETIRAR* en nuestro taller. 🚘\n\nPuedes consultar los detalles de la orden en el portal:\n${urlPortalCliente}\n\n¡Te esperamos!`;
+
+          window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(mensajeListo)}`, '_blank');
+          
+          cargarTaller();
+        } else {
+          alert('Error al actualizar estado');
+        }
+      } catch (err) {
+        alert('Error al conectar con el servidor.');
+      }
+    }
+
+    // ENTREGAR Y COBRAR (DAR DE BAJA DEL TALLER)
+    async function entregarYCobrar(id) {
+      if(!confirm('¿Confirmar entrega del vehículo y cobrar la orden?')) return;
+
+      try {
+        const res = await fetch(`/api/ordenes/${id}/entregar`, { method: 'PUT' });
+        if (res.ok) {
+          alert('Vehículo entregado y registrado en balance.');
           cargarTaller();
         }
       } catch (err) {
-        alert('Error al actualizar el estado');
+        alert('Error al procesar cobro');
       }
     }
 
-    // REGISTRO Y ENVÍO AUTOMÁTICO DE WHATSAPP
+    // REGISTRO COMPLETO Y WHATSAPP DE BIENVENIDA AUTOMÁTICO
     document.getElementById('form-todo-en-uno').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -312,14 +362,13 @@
         if (res.ok) {
           alert(data.mensaje || 'Vehículo ingresado con éxito');
           
-          // GENERAR LINK Y MENSAJE DE WHATSAPP AUTOMÁTICO
+          // WHATSAPP AUTOMÁTICO DE BIENVENIDA
           const telLimpio = telefonoVal.replace(/[^0-9]/g, '');
           const numFinal = telLimpio.startsWith('54') ? telLimpio : '54' + telLimpio;
           const urlPortalCliente = `${window.location.origin}/cliente.html`;
 
           const mensajeBienvenida = `Hola *${nombreVal}*, ¡bienvenido a *Taller Mecánico 360*! 🛠️\n\nHemos ingresado tu vehículo *${marcaVal} ${modeloVal}* (Patente: *${placaVal}*) al taller.\n\nPuedes hacer el seguimiento en vivo del estado de tu vehículo ingresando tu patente en nuestro portal:\n${urlPortalCliente}\n\n¡Gracias por confiar en nosotros! 🚘`;
 
-          // Abrir WhatsApp en nueva pestaña
           window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(mensajeBienvenida)}`, '_blank');
 
           document.getElementById('form-todo-en-uno').reset();
@@ -332,30 +381,40 @@
       }
     });
 
+    // CARGAR REPORTES REALES DESDE LA BASE DE DATOS
     async function cargarReportes() {
+      const desde = document.getElementById('f_desde').value;
+      const hasta = document.getElementById('f_hasta').value;
+
       try {
-        const resClientes = await fetch('/api/clientes');
-        const clientes = await resClientes.json();
-        document.getElementById('rep-total-clientes').innerText = clientes.length;
+        const queryParams = new URLSearchParams();
+        if(desde) queryParams.append('desde', desde);
+        if(hasta) queryParams.append('hasta', hasta);
 
-        const resMantenimientos = await fetch('/api/mantenimientos');
-        const mantenimientos = await resMantenimientos.json();
+        const res = await fetch(`/api/reportes/personalizado?${queryParams.toString()}`);
+        const data = await res.json();
 
-        let totalIngreso = 0;
-        const contexMecanicos = {};
+        document.getElementById('rep-entregados').innerText = data.entregados || 0;
+        document.getElementById('rep-ingreso-total').innerText = `$ ${parseFloat(data.ingresos_totales || 0).toLocaleString('es-AR')}`;
 
-        mantenimientos.forEach(m => {
-          totalIngreso += parseFloat(m.costo || 0);
-          const mec = m.mecanico || 'Sin Asignar';
-          contexMecanicos[mec] = (contexMecanicos[mec] || 0) + 1;
-        });
+        const tbody = document.getElementById('tabla-reporte-detalle');
+        tbody.innerHTML = '';
 
-        document.getElementById('rep-ingreso-total').innerText = `$ ${totalIngreso.toLocaleString('es-AR')}`;
-
-        const tbodyMec = document.getElementById('tabla-mecanicos');
-        tbodyMec.innerHTML = '';
-        for (const [mecanico, cant] of Object.entries(contexMecanicos)) {
-          tbodyMec.innerHTML += `<tr><td>${mecanico}</td><td><strong>${cant}</strong> auto(s)</td></tr>`;
+        if(data.servicios && data.servicios.length > 0) {
+          data.servicios.forEach(s => {
+            const fechaFmt = new Date(s.created_at).toLocaleDateString('es-AR');
+            tbody.innerHTML += `
+              <tr>
+                <td>${fechaFmt}</td>
+                <td><strong>${s.cliente}</strong></td>
+                <td>${s.marca} ${s.modelo} (${s.placa})</td>
+                <td>${s.diagnostico_inicial}</td>
+                <td><strong style="color:var(--success);">$ ${parseFloat(s.costo).toLocaleString('es-AR')}</strong></td>
+              </tr>
+            `;
+          });
+        } else {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No hay servicios cobrados en este rango de fechas.</td></tr>`;
         }
 
       } catch (err) {
