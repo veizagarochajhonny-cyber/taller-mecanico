@@ -1,46 +1,53 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Taller Mecánico 360 - Sistema de Gestión</title>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f1f5f9; color: #334155; }
-    .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    h1, h2, h3 { color: #0f172a; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 15px; background-color: #f1f5f9; color: #334155; }
+    .container { max-width: 1100px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    h1, h2, h3 { color: #0f172a; word-wrap: break-word; }
     
     /* PANTALLA DE LOGIN */
-    #modal-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-    .login-box { background: white; padding: 30px; border-radius: 12px; text-align: center; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-    .login-box input { width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 1.2rem; }
+    #modal-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 15px; }
+    .login-box { background: white; padding: 25px; border-radius: 12px; text-align: center; width: 100%; max-width: 360px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    .login-box input { width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 1.2rem; }
     
-    .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
-    .tab-btn { padding: 12px 20px; border: none; background: none; font-size: 1rem; font-weight: bold; cursor: pointer; color: #64748b; }
+    /* HEADER & TABS */
+    .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; overflow-x: auto; padding-bottom: 5px; }
+    .tab-btn { padding: 10px 16px; border: none; background: none; font-size: 0.95rem; font-weight: bold; cursor: pointer; color: #64748b; white-space: nowrap; }
     .tab-btn.active { color: #2563eb; border-bottom: 3px solid #2563eb; }
     
     .section { display: none; }
     .section.active { display: block; }
 
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 18px; border-radius: 8px; margin-bottom: 20px; }
+    
+    /* GRIDS RESPONSIVOS */
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
     
     .form-group { display: flex; flex-direction: column; margin-bottom: 12px; }
     .form-group label { font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; }
-    .form-group input, .form-group textarea, .form-group select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.95rem; }
+    .form-group input, .form-group textarea, .form-group select { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 0.95rem; width: 100%; }
 
-    button { background-color: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    button { background-color: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 5px; font-weight: bold; cursor: pointer; width: auto; }
     button:hover { background-color: #1d4ed8; }
     .btn-green { background-color: #059669; }
     .btn-green:hover { background-color: #047857; }
     .btn-yellow { background-color: #d97706; color: white; }
     .btn-yellow:hover { background-color: #b45309; }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    /* TABLAS RESPONSIVAS CON SCROLL HORIZONTAL */
+    .table-responsive { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 6px; border: 1px solid #e2e8f0; }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
     th { background-color: #1e293b; color: white; font-size: 0.85rem; }
 
-    .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; display: inline-block; }
     .badge-reparacion { background-color: #fef08a; color: #854d0e; }
     .badge-listo { background-color: #bbf7d0; color: #166534; }
     
@@ -48,6 +55,14 @@
     .metric-card h2 { margin: 5px 0; color: #1d4ed8; }
 
     #recibo-impresion { display: none; padding: 20px; border: 1px dashed #333; max-width: 400px; margin: auto; }
+
+    @media (max-width: 600px) {
+      body { margin: 8px; }
+      .container { padding: 12px; }
+      h1 { font-size: 1.4rem; }
+      .header-top { flex-direction: column; align-items: flex-start; }
+      button { width: 100%; margin-top: 5px; }
+    }
 
     @media print {
       body * { visibility: hidden; }
@@ -74,9 +89,9 @@
   </div>
 
   <div class="container" id="contenido-sistema" style="display: none;">
-    <div style="display: flex; justify-content: space-between; align-items: center;" class="no-print">
+    <div class="header-top no-print">
       <h1>⚙️ Taller Mecánico 360</h1>
-      <a href="/cliente.html" target="_blank" style="background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold;">🌐 Ver Portal Público de Clientes</a>
+      <a href="/cliente.html" target="_blank" style="background: #e0f2fe; color: #0369a1; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold; display: inline-block;">🌐 Ver Portal Público de Clientes</a>
     </div>
     
     <div class="nav-tabs no-print">
@@ -112,27 +127,29 @@
               </select>
             </div>
           </div>
-          <button type="submit" class="btn-green">Procesar e Ingresar al Taller</button>
+          <button type="submit" class="btn-green" style="width: 100%; margin-top: 10px;">Procesar e Ingresar al Taller</button>
         </form>
       </div>
 
       <h2>🛠️ Vehículos Actualmente en Taller</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>N° Orden</th>
-            <th>Placa / Vehículo</th>
-            <th>Cliente / Tel.</th>
-            <th>Diagnóstico</th>
-            <th>Costo ($ ARS)</th>
-            <th>Estado</th>
-            <th class="no-print">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-taller">
-          <tr><td colspan="7">Cargando...</td></tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>N° Orden</th>
+              <th>Placa / Vehículo</th>
+              <th>Cliente / Tel.</th>
+              <th>Diagnóstico</th>
+              <th>Costo ($ ARS)</th>
+              <th>Estado</th>
+              <th class="no-print">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-taller">
+            <tr><td colspan="7">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- SECCIÓN 2: REPORTES Y BALANCE DEL DUEÑO -->
@@ -140,18 +157,20 @@
       <h2>📊 Panel de Auditoría e Ingresos ($ ARS)</h2>
       
       <div class="card no-print">
-        <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-          <div class="form-group">
+        <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 140px;">
             <label>Fecha Desde:</label>
             <input type="date" id="rep_desde">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="flex: 1; min-width: 140px;">
             <label>Fecha Hasta:</label>
             <input type="date" id="rep_hasta">
           </div>
-          <button onclick="consultarReportePersonalizado()">🔎 Filtrar por Rango</button>
-          <button class="btn-green" onclick="filtrarHoy()">Hoy</button>
-          <button class="btn-yellow" onclick="filtrarMes()">Este Mes</button>
+          <div style="display: flex; gap: 5px; flex-wrap: wrap; width: 100%;">
+            <button onclick="consultarReportePersonalizado()" style="flex: 1;">🔎 Filtrar</button>
+            <button class="btn-green" onclick="filtrarHoy()" style="flex: 1;">Hoy</button>
+            <button class="btn-yellow" onclick="filtrarMes()" style="flex: 1;">Este Mes</button>
+          </div>
         </div>
       </div>
 
@@ -171,21 +190,23 @@
       </div>
 
       <h3>📄 Detalle de Vehículos Cobrados en el Rango Seleccionado</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha / Hora</th>
-            <th>N° Orden</th>
-            <th>Vehículo</th>
-            <th>Cliente</th>
-            <th>Trabajo Realizado</th>
-            <th>Monto Cobrado ($ ARS)</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-reporte-detalle">
-          <tr><td colspan="6">Seleccione un rango de fechas o presione un botón de filtro.</td></tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha / Hora</th>
+              <th>N° Orden</th>
+              <th>Vehículo</th>
+              <th>Cliente</th>
+              <th>Trabajo Realizado</th>
+              <th>Monto Cobrado ($ ARS)</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-reporte-detalle">
+            <tr><td colspan="6">Seleccione un rango de fechas o presione un botón de filtro.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
   </div>
@@ -210,7 +231,7 @@
   </div>
 
   <script>
-    const CLAVE_ADMIN = "1234"; // 🔑 Puedes cambiar esta clave si gustas
+    const CLAVE_ADMIN = "1234";
 
     function validarAcceso() {
       const pass = document.getElementById('clave-ingreso').value;
@@ -326,7 +347,7 @@
         const telLimpio = telefono.replace(/[^0-9]/g, '');
         const numFinal = telLimpio.startsWith('54') ? telLimpio : '54' + telLimpio;
 
-        const mensajeWS = `Hola *${cliente}*, le saludamos de *Taller Mecánico 360* 🛠️. Le informamos que su vehículo *${auto}* ya se encuentra totalmente reparado y listo para ser entregado.\n\nTotal a cancelar: *$ ${parseFloat(costo).toLocaleString('es-AR')} ARS*.\n\nPuede consultar el estado en vivo ingresando su placa aquí:\nhttp://localhost:3000/cliente.html`;
+        const mensajeWS = `Hola *${cliente}*, le saludamos de *Taller Mecánico 360* 🛠️. Le informamos que su vehículo *${auto}* ya se encuentra totalmente reparado y listo para ser entregado.\n\nTotal a cancelar: *$ ${parseFloat(costo).toLocaleString('es-AR')} ARS*.\n\nPuede consultar el estado en vivo ingresando su placa aquí:\n${window.location.origin}/cliente.html`;
         window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(mensajeWS)}`, '_blank');
         cargarTaller();
       }
