@@ -1,72 +1,145 @@
-<script>
-  // URL de tu servidor en Render
-  const RENDER_API_URL = window.location.origin; // Toma automáticamente el dominio actual (ej: https://...onrender.com)
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taller Mecánico 360 - Estado de Vehículo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f1f5f9; color: #334155; }
+    .container { max-width: 500px; margin: 30px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #0f172a; margin-bottom: 5px; font-size: 1.5rem; }
+    p.subtitle { text-align: center; color: #64748b; font-size: 0.9rem; margin-top: 0; margin-bottom: 25px; }
+    
+    .search-box { display: flex; gap: 10px; margin-bottom: 15px; }
+    .search-box input { flex: 1; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1.1rem; text-transform: uppercase; text-align: center; font-weight: bold; }
+    .search-box input:focus { border-color: #2563eb; outline: none; }
+    .search-box button { background-color: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+    .search-box button:hover { background-color: #1d4ed8; }
 
-  async function buscarVehiculo() {
-    const inputEl = document.getElementById('input-placa');
-    const errEl = document.getElementById('msg-error');
-    const resCard = document.getElementById('resultado');
+    .result-card { display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-top: 20px; }
+    .result-item { margin-bottom: 12px; }
+    .result-item label { font-size: 0.8rem; color: #64748b; font-weight: bold; display: block; text-transform: uppercase; }
+    .result-item span { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
 
-    const busquedaLimpia = inputEl.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    .badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; text-align: center; margin-top: 5px; }
+    .badge-reparacion { background-color: #fef08a; color: #854d0e; }
+    .badge-listo { background-color: #bbf7d0; color: #166534; }
+    .badge-entregado { background-color: #e2e8f0; color: #475569; }
 
-    errEl.style.display = 'none';
-    resCard.style.display = 'none';
+    #msg-error { color: #dc2626; text-align: center; font-size: 0.95rem; display: none; margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
 
-    if (!busquedaLimpia) {
-      errEl.innerText = 'Por favor ingrese una patente válida.';
-      errEl.style.display = 'block';
-      return;
-    }
+  <div class="container">
+    <h1>🚘 Taller Mecánico 360</h1>
+    <p class="subtitle">Consulta el estado de tu vehículo en tiempo real</p>
 
-    try {
-      // Petición a tu API Node/Express en Render
-      const res = await fetch(`${RENDER_API_URL}/api/ordenes`);
-      
-      if (!res.ok) {
-        throw new Error('Error al conectar con el servidor');
-      }
+    <div class="search-box">
+      <input type="text" id="input-placa" placeholder="EJ: CTB-500" maxlength="10">
+      <button id="btn-buscar">Buscar</button>
+    </div>
 
-      const ordenes = await res.json();
+    <p id="msg-error"></p>
 
-      // Buscamos coincidencia de la patente ignorando guiones/espacios
-      const ordenEncontrada = ordenes.find(o => {
-        const placaDB = (o.placa || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-        return placaDB === busquedaLimpia;
-      });
+    <div id="resultado" class="result-card">
+      <div class="result-item">
+        <label>Orden de Servicio</label>
+        <span id="res-orden">#0</span>
+      </div>
+      <div class="result-item">
+        <label>Vehículo</label>
+        <span id="res-vehiculo">-</span>
+      </div>
+      <div class="result-item">
+        <label>Cliente</label>
+        <span id="res-cliente">-</span>
+      </div>
+      <div class="result-item">
+        <label>Diagnóstico / Servicio</label>
+        <span id="res-diagnostico">-</span>
+      </div>
+      <div class="result-item">
+        <label>Total Estimado</label>
+        <span id="res-costo">$ 0 ARS</span>
+      </div>
+      <div class="result-item">
+        <label>Estado Actual</label>
+        <div id="res-estado"></div>
+      </div>
+    </div>
+  </div>
 
-      if (!ordenEncontrada) {
-        errEl.innerText = `No se encontró ningún vehículo con la patente "${inputEl.value}".`;
+  <script>
+    async function buscarVehiculo() {
+      const inputEl = document.getElementById('input-placa');
+      const errEl = document.getElementById('msg-error');
+      const resCard = document.getElementById('resultado');
+
+      const busquedaLimpia = inputEl.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      errEl.style.display = 'none';
+      resCard.style.display = 'none';
+
+      if (!busquedaLimpia) {
+        errEl.innerText = 'Por favor ingrese una patente válida.';
         errEl.style.display = 'block';
         return;
       }
 
-      const o = ordenEncontrada;
+      try {
+        const res = await fetch('/api/ordenes');
+        
+        if (!res.ok) {
+          throw new Error('Error al conectar con el servidor.');
+        }
 
-      // Mostrar Resultados
-      document.getElementById('res-orden').innerText = '#' + o.id;
-      document.getElementById('res-vehiculo').innerText = `${o.marca || ''} ${o.modelo || ''} (${o.placa})`;
-      document.getElementById('res-cliente').innerText = o.cliente || o.nombre || 'Cliente';
-      document.getElementById('res-diagnostico').innerText = o.diagnostico_inicial || o.diagnostico || 'Sin diagnóstico';
-      document.getElementById('res-costo').innerText = `$ ${parseFloat(o.costo || 0).toLocaleString('es-AR')} ARS`;
+        const ordenes = await res.json();
 
-      const estadoEl = document.getElementById('res-estado');
-      let badgeClass = 'badge-reparacion';
-      if (o.estado === 'Listo') badgeClass = 'badge-listo';
-      if (o.estado === 'Entregado') badgeClass = 'badge-entregado';
+        // Buscar coincidencia flexible de patente
+        const o = ordenes.find(item => {
+          const placaDB = (item.placa || item.patente || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+          return placaDB === busquedaLimpia;
+        });
 
-      estadoEl.innerHTML = `<span class="badge ${badgeClass}">${o.estado || 'En Reparacion'}</span>`;
-      resCard.style.display = 'block';
+        if (!o) {
+          errEl.innerText = 'No se encontró ningún vehículo registrado con la patente ' + inputEl.value;
+          errEl.style.display = 'block';
+          return;
+        }
 
-    } catch (err) {
-      console.error(err);
-      errEl.innerText = 'Error de conexión con el servidor de Render.';
-      errEl.style.display = 'block';
+        // Cargar información en la pantalla
+        document.getElementById('res-orden').innerText = '#' + (o.id || o.numero_orden || '1');
+        document.getElementById('res-vehiculo').innerText = `${o.marca || ''} ${o.modelo || ''} (${o.placa || o.patente || ''})`;
+        document.getElementById('res-cliente').innerText = o.cliente || o.nombre_cliente || o.nombre || 'Cliente';
+        document.getElementById('res-diagnostico').innerText = o.diagnostico_inicial || o.diagnostico || 'Diagnóstico en revisión';
+        
+        const costoVal = parseFloat(o.costo || o.costo_estimado || 0);
+        document.getElementById('res-costo').innerText = `$ ${costoVal.toLocaleString('es-AR')} ARS`;
+
+        const estadoEl = document.getElementById('res-estado');
+        const estadoTexto = o.estado || 'En Reparacion';
+        let badgeClass = 'badge-reparacion';
+        if (estadoTexto.toLowerCase().includes('listo')) badgeClass = 'badge-listo';
+        if (estadoTexto.toLowerCase().includes('entregado')) badgeClass = 'badge-entregado';
+
+        estadoEl.innerHTML = `<span class="badge ${badgeClass}">${estadoTexto}</span>`;
+        resCard.style.display = 'block';
+
+      } catch (err) {
+        console.error(err);
+        errEl.innerText = 'Error al consultar la base de datos. Intente nuevamente.';
+        errEl.style.display = 'block';
+      }
     }
-  }
 
-  document.getElementById('input-placa').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
-      buscarVehiculo();
-    }
-  });
-</script>
+    document.getElementById('btn-buscar').addEventListener('click', buscarVehiculo);
+    document.getElementById('input-placa').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        buscarVehiculo();
+      }
+    });
+  </script>
+</body>
+</html>
