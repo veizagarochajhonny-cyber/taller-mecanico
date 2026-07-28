@@ -121,7 +121,7 @@
         const estadoEl = document.getElementById('res-estado');
         const estadoTexto = o.estado || 'En Reparacion';
         let badgeClass = 'badge-reparacion';
-        if (estadoTexto.toLowerCase().includes('listo')) badgeClass = 'badge-listo';
+        if (estadoTexto.toLowerCase().includes('listo') || estadoTexto.toLowerCase().includes('reparado')) badgeClass = 'badge-listo';
         if (estadoTexto.toLowerCase().includes('entregado')) badgeClass = 'badge-entregado';
 
         estadoEl.innerHTML = `<span class="badge ${badgeClass}">${estadoTexto}</span>`;
