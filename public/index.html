@@ -4,15 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Taller Mecánico 360 - Sistema de Gestión</title>
+  <!-- SDK oficial de Supabase via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f1f5f9; color: #334155; }
     .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     h1, h2, h3 { color: #0f172a; }
     
-    /* PANTALLA DE LOGIN */
+    /* MODAL DE LOGIN */
     #modal-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; }
     .login-box { background: white; padding: 30px; border-radius: 12px; text-align: center; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-    .login-box input { width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 1.2rem; }
+    .login-box input { width: 90%; padding: 10px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 1rem; }
     
     .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
     .tab-btn { padding: 12px 20px; border: none; background: none; font-size: 1rem; font-weight: bold; cursor: pointer; color: #64748b; }
@@ -35,6 +37,7 @@
     .btn-green:hover { background-color: #047857; }
     .btn-yellow { background-color: #d97706; color: white; }
     .btn-yellow:hover { background-color: #b45309; }
+    .btn-red { background-color: #dc2626; color: white; }
 
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
@@ -59,27 +62,29 @@
 </head>
 <body>
 
-  <!-- MODAL DE LOGIN / CLAVE DE ACCESO -->
+  <!-- MODAL DE LOGIN AUTÉNTICO DE SUPABASE -->
   <div id="modal-login">
     <div class="login-box">
       <h2>🔐 Acceso Sistema</h2>
-      <p style="font-size: 0.85rem; color: #64748b;">Ingrese la clave de administrador para acceder al taller y reportes:</p>
-      <input type="password" id="clave-ingreso" placeholder="****" maxlength="10">
+      <p style="font-size: 0.85rem; color: #64748b;">Ingrese sus credenciales de administrador:</p>
+      <input type="email" id="login-email" placeholder="correo@taller.com">
+      <input type="password" id="login-password" placeholder="Contraseña">
       <br>
-      <button onclick="validarAcceso()" style="width: 100%; padding: 10px;">Ingresar al Sistema</button>
-      <p id="err-login" style="color: red; font-size: 0.8rem; display: none; margin-top: 10px;">Clave incorrecta</p>
-      <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
-      <p style="font-size: 0.8rem;">¿Sos cliente? <a href="/cliente.html" target="_blank" style="color: #2563eb; font-weight: bold;">Ir a Consulta de Vehículo</a></p>
+      <button onclick="iniciarSesion()" style="width: 100%; padding: 10px; margin-top: 10px;">Ingresar al Sistema</button>
+      <p id="err-login" style="color: red; font-size: 0.8rem; display: none; margin-top: 10px;"></p>
     </div>
   </div>
 
   <div class="container" id="contenido-sistema" style="display: none;">
     <div style="display: flex; justify-content: space-between; align-items: center;" class="no-print">
       <h1>⚙️ Taller Mecánico 360</h1>
-      <a href="/cliente.html" target="_blank" style="background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold;">🌐 Ver Portal Público de Clientes</a>
+      <div>
+        <span id="user-email" style="font-size: 0.85rem; font-weight: bold; margin-right: 10px;"></span>
+        <button onclick="cerrarSesion()" class="btn-red" style="font-size: 0.8rem;">Cerrar Sesión</button>
+      </div>
     </div>
     
-    <div class="nav-tabs no-print">
+    <div class="nav-tabs no-print" style="margin-top: 15px;">
       <button class="tab-btn active" onclick="cambiarTab('taller')">👨‍🔧 Recepción y Taller</button>
       <button class="tab-btn" onclick="cambiarTab('reportes')">📊 Reportes del Dueño</button>
     </div>
@@ -210,17 +215,47 @@
   </div>
 
   <script>
-    const CLAVE_ADMIN = "1234"; // 🔑 Puedes cambiar esta clave si gustas
+    // Configuración del Cliente Supabase
+    const SUPABASE_URL = 'TU_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    function validarAcceso() {
-      const pass = document.getElementById('clave-ingreso').value;
-      if (pass === CLAVE_ADMIN) {
-        document.getElementById('modal-login').style.display = 'none';
-        document.getElementById('contenido-sistema').style.display = 'block';
-        cargarTaller();
-      } else {
-        document.getElementById('err-login').style.display = 'block';
+    // Verificación de Sesión Inicial
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        mostrarApp(session.user);
       }
+    });
+
+    async function iniciarSesion() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const errEl = document.getElementById('err-login');
+
+      errEl.style.display = 'none';
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        errEl.innerText = 'Error: ' + error.message;
+        errEl.style.display = 'block';
+      } else {
+        mostrarApp(data.user);
+      }
+    }
+
+    async function cerrarSesion() {
+      await supabaseClient.auth.signOut();
+      document.getElementById('modal-login').style.display = 'flex';
+      document.getElementById('contenido-sistema').style.display = 'none';
+    }
+
+    function mostrarApp(user) {
+      document.getElementById('modal-login').style.display = 'none';
+      document.getElementById('contenido-sistema').style.display = 'block';
+      document.getElementById('user-email').innerText = user.email;
+      cargarTaller();
     }
 
     function cambiarTab(tab) {
@@ -247,95 +282,105 @@
       const marcaVal = partesVehiculo[0] || 'Auto';
       const modeloVal = partesVehiculo.slice(1).join(' ') || 'General';
 
-      const body = {
-        nombre: document.getElementById('r_nombre').value,
+      const nuevaOrden = {
+        cliente: document.getElementById('r_nombre').value,
         telefono: document.getElementById('r_telefono').value,
-        placa: document.getElementById('r_placa').value,
+        placa: document.getElementById('r_placa').value.toUpperCase(),
         marca: marcaVal,
         modelo: modeloVal,
         mecanico: document.getElementById('r_mecanico').value,
-        diagnostico: document.getElementById('r_diagnostico').value,
+        diagnostico_inicial: document.getElementById('r_diagnostico').value,
         costo: parseFloat(document.getElementById('r_costo').value) || 0,
-        aprobado: document.getElementById('r_aprobado').value === 'true'
+        aprobado: document.getElementById('r_aprobado').value === 'true',
+        estado: 'En Reparacion'
       };
 
-      try {
-        const res = await fetch('/api/recepcion-completa', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(body)
-        });
-        
-        const data = await res.json();
-        
-        if (res.ok) {
-          alert(data.mensaje);
-          document.getElementById('form-todo-en-uno').reset();
-          cargarTaller();
-        } else {
-          alert('Error: ' + (data.error || data.mensaje));
-        }
-      } catch (err) {
-        alert('Error al conectar con el servidor.');
+      const { data, error } = await supabaseClient
+        .from('ordenes_taller')
+        .insert([nuevaOrden]);
+
+      if (error) {
+        alert('Error al registrar orden: ' + error.message);
+      } else {
+        alert('Orden registrada correctamente');
+        document.getElementById('form-todo-en-uno').reset();
+        cargarTaller();
       }
     });
 
-    // Cargar Taller
+    // Cargar Taller (Autos en Taller)
     async function cargarTaller() {
-      try {
-        const res = await fetch('/api/ordenes');
-        const ordenes = await res.json();
-        const tbody = document.getElementById('tabla-taller');
-        tbody.innerHTML = '';
+      const { data: ordenes, error } = await supabaseClient
+        .from('ordenes_taller')
+        .select('*')
+        .neq('estado', 'Entregado')
+        .order('id', { ascending: false });
 
-        const activas = ordenes.filter(o => o.estado !== 'Entregado');
+      const tbody = document.getElementById('tabla-taller');
+      tbody.innerHTML = '';
 
-        if (activas.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7">No hay vehículos en taller actualmente.</td></tr>';
-          return;
-        }
-
-        activas.forEach(o => {
-          const ordenJson = JSON.stringify(o).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>#${o.id}</strong></td>
-              <td>${o.marca} ${o.modelo} <br><strong>(${o.placa})</strong></td>
-              <td>${o.cliente} <br><small>📲 ${o.telefono}</small></td>
-              <td>${o.diagnostico_inicial}</td>
-              <td><strong>$ ${parseFloat(o.costo || 0).toLocaleString('es-AR')} ARS</strong></td>
-              <td><span class="badge ${o.estado === 'Listo' ? 'badge-listo' : 'badge-reparacion'}">${o.estado}</span></td>
-              <td class="no-print">
-                ${o.estado === 'En Reparacion' ? 
-                  `<button onclick="marcarListo(${o.id}, '${o.telefono}', '${o.cliente}', '${o.marca} ${o.modelo}', ${o.costo})" class="btn-yellow" style="font-size:0.75rem;">📲 Reparado (Notificar)</button>` : 
-                  `<button onclick='marcarEntregado(${ordenJson})' class="btn-green" style="font-size:0.75rem;">💵 Cobrar y Entregar</button>`
-                }
-              </td>
-            </tr>
-          `;
-        });
-      } catch (err) {
-        console.error('Error al cargar taller:', err);
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="7">Error al cargar datos: ${error.message}</td></tr>`;
+        return;
       }
+
+      if (!ordenes || ordenes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">No hay vehículos en taller actualmente.</td></tr>';
+        return;
+      }
+
+      ordenes.forEach(o => {
+        const ordenJson = JSON.stringify(o).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>#${o.id}</strong></td>
+            <td>${o.marca} ${o.modelo} <br><strong>(${o.placa})</strong></td>
+            <td>${o.cliente} <br><small>📲 ${o.telefono}</small></td>
+            <td>${o.diagnostico_inicial}</td>
+            <td><strong>$ ${parseFloat(o.costo || 0).toLocaleString('es-AR')} ARS</strong></td>
+            <td><span class="badge ${o.estado === 'Listo' ? 'badge-listo' : 'badge-reparacion'}">${o.estado}</span></td>
+            <td class="no-print">
+              ${o.estado === 'En Reparacion' ? 
+                `<button onclick="marcarListo(${o.id}, '${o.telefono}', '${o.cliente}', '${o.marca} ${o.modelo}', ${o.costo})" class="btn-yellow" style="font-size:0.75rem;">📲 Reparado (Notificar)</button>` : 
+                `<button onclick='marcarEntregado(${ordenJson})' class="btn-green" style="font-size:0.75rem;">💵 Cobrar y Entregar</button>`
+              }
+            </td>
+          </tr>
+        `;
+      });
     }
 
-    // Notificación WhatsApp al terminar
+    // Cambiar estado a Listo y enviar WhatsApp
     async function marcarListo(id, telefono, cliente, auto, costo) {
-      const res = await fetch(`/api/ordenes/${id}/listo`, { method: 'PUT' });
-      if (res.ok) {
+      const { error } = await supabaseClient
+        .from('ordenes_taller')
+        .update({ estado: 'Listo' })
+        .eq('id', id);
+
+      if (!error) {
         const telLimpio = telefono.replace(/[^0-9]/g, '');
         const numFinal = telLimpio.startsWith('54') ? telLimpio : '54' + telLimpio;
 
-        const mensajeWS = `Hola *${cliente}*, le saludamos de *Taller Mecánico 360* 🛠️. Le informamos que su vehículo *${auto}* ya se encuentra totalmente reparado y listo para ser entregado.\n\nTotal a cancelar: *$ ${parseFloat(costo).toLocaleString('es-AR')} ARS*.\n\nPuede consultar el estado en vivo ingresando su placa aquí:\nhttp://localhost:3000/cliente.html`;
+        const mensajeWS = `Hola *${cliente}*, le saludamos de *Taller Mecánico 360* 🛠️. Le informamos que su vehículo *${auto}* ya se encuentra totalmente reparado y listo para ser entregado.\n\nTotal a cancelar: *$ ${parseFloat(costo).toLocaleString('es-AR')} ARS*.`;
         window.open(`https://wa.me/${numFinal}?text=${encodeURIComponent(mensajeWS)}`, '_blank');
         cargarTaller();
+      } else {
+        alert('Error al actualizar estado: ' + error.message);
       }
     }
 
-    // Cobro y Recibo
+    // Cobro, Recibo y Estado Entregado
     async function marcarEntregado(o) {
       if (confirm(`¿Confirmar cobro total de $ ${parseFloat(o.costo).toLocaleString('es-AR')} ARS y entrega del vehículo?`)) {
-        await fetch(`/api/ordenes/${o.id}/entregar`, { method: 'PUT' });
+        const { error } = await supabaseClient
+          .from('ordenes_taller')
+          .update({ estado: 'Entregado' })
+          .eq('id', o.id);
+
+        if (error) {
+          alert('Error al procesar la entrega: ' + error.message);
+          return;
+        }
 
         document.getElementById('rec-orden').innerText = o.id;
         document.getElementById('rec-fecha').innerText = new Date().toLocaleDateString('es-AR');
@@ -357,27 +402,44 @@
       }
     }
 
-    // Reportes
+    // Reportes en tiempo real
     async function consultarReportePersonalizado() {
-      const desde = document.getElementById('rep_desde').value;
-      const hasta = document.getElementById('rep_hasta').value;
+      const desdeInput = document.getElementById('rep_desde').value;
+      const hastaInput = document.getElementById('rep_hasta').value;
 
-      const res = await fetch(`/api/reportes/personalizado?desde=${desde}&hasta=${hasta}`);
-      const data = await res.json();
+      let query = supabaseClient.from('ordenes_taller').select('*');
 
-      document.getElementById('rep-entregados').innerText = data.entregados ?? 0;
-      document.getElementById('rep-proceso').innerText = data.en_proceso ?? 0;
-      document.getElementById('rep-ingresos').innerText = `$ ${parseFloat(data.ingresos_totales || 0).toLocaleString('es-AR')} ARS`;
+      if (desdeInput) {
+        query = query.gte('created_at', `${desdeInput}T00:00:00.000Z`);
+      }
+      if (hastaInput) {
+        query = query.lte('created_at', `${hastaInput}T23:59:59.999Z`);
+      }
+
+      const { data: todos, error } = await query;
+
+      if (error) {
+        alert('Error al consultar reportes: ' + error.message);
+        return;
+      }
+
+      const entregados = todos.filter(o => o.estado === 'Entregado');
+      const enProceso = todos.filter(o => o.estado !== 'Entregado');
+      const totalIngresos = entregados.reduce((sum, o) => sum + parseFloat(o.costo || 0), 0);
+
+      document.getElementById('rep-entregados').innerText = entregados.length;
+      document.getElementById('rep-proceso').innerText = enProceso.length;
+      document.getElementById('rep-ingresos').innerText = `$ ${totalIngresos.toLocaleString('es-AR')} ARS`;
 
       const tbody = document.getElementById('tabla-reporte-detalle');
       tbody.innerHTML = '';
 
-      if (!data.servicios || data.servicios.length === 0) {
+      if (entregados.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6">No se registraron cobros en el rango seleccionado.</td></tr>';
         return;
       }
 
-      data.servicios.forEach(s => {
+      entregados.forEach(s => {
         const fecha = new Date(s.created_at).toLocaleDateString('es-AR') + ' ' + new Date(s.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         tbody.innerHTML += `
           <tr>
