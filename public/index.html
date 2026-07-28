@@ -3,122 +3,247 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Taller Mecánico 360</title>
+  <title>Taller Mecánico 360 - Dashboard & Gestión</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: sans-serif; margin: 0; padding: 20px; background: #f1f5f9; color: #334155; }
-    header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; }
-    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
-    @media(max-width: 800px) { .layout { grid-template-columns: 1fr; } }
-    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    form label { display: block; font-size: 0.8rem; font-weight: bold; margin-top: 10px; color: #64748b; }
-    form input, form textarea { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #cbd5e1; border-radius: 4px; }
-    form button { width: 100%; margin-top: 15px; padding: 10px; background: #10b981; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background: #f8fafc; color: #1e293b; }
+    header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    
+    /* DASHBOARD / REPORTES */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .metric-card { background: white; padding: 18px; border-radius: 10px; border-left: 5px solid #2563eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .metric-card h4 { margin: 0; font-size: 0.8rem; color: #64748b; text-transform: uppercase; }
+    .metric-card .number { font-size: 1.8rem; font-weight: bold; color: #0f172a; margin-top: 5px; }
+
+    /* LAYOUT PRINCIPAL */
+    .layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+    @media(max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    form label { display: block; font-size: 0.8rem; font-weight: bold; margin-top: 12px; color: #475569; }
+    form input, form textarea, form select { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+    form button { width: 100%; margin-top: 18px; padding: 12px; background: #059669; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
+    form button:hover { background: #047857; }
+
+    /* TABLA Y REPORTES */
+    .table-container { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; }
-    th { background: #1e293b; color: white; }
-    .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; }
+    th { background: #0f172a; color: white; }
+    .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
     .badge-reparacion { background: #fef08a; color: #854d0e; }
     .badge-listo { background: #bbf7d0; color: #166534; }
-    .btn-notificar { background: #f97316; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.75rem; }
+    .badge-entregado { background: #e2e8f0; color: #475569; }
+
+    /* BOTONES ACCION */
+    .btn-action { border: none; padding: 7px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 5px; margin-right: 4px; }
+    .btn-wa { background: #25d366; color: white; }
+    .btn-listo { background: #f97316; color: white; }
+
+    /* DETALLE MECÁNICOS */
+    .mechanic-card { background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+    .mechanic-card h5 { margin: 0 0 8px 0; color: #1e293b; font-size: 0.9rem; }
+    .car-tag { background: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; display: inline-block; margin: 2px; border: 1px solid #cbd5e1; }
   </style>
 </head>
 <body>
 
   <header>
     <h2>⚙️ Taller Mecánico 360</h2>
-    <a href="/cliente.html" target="_blank" style="background:#2563eb; color:white; padding:8px 12px; border-radius:4px; text-decoration:none; font-weight:bold; font-size:0.85rem;">🌐 Portal Cliente</a>
+    <a href="/cliente.html" target="_blank" style="background:#2563eb; color:white; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:0.85rem;">🌐 Portal Cliente</a>
   </header>
 
+  <!-- SECCIÓN DE REPORTES / KPI DUMMY PARA EL DUEÑO -->
+  <div class="metrics-grid">
+    <div class="metric-card" style="border-color: #2563eb;">
+      <h4>Autos en Taller</h4>
+      <div class="number" id="kpi-total-autos">0</div>
+    </div>
+    <div class="metric-card" style="border-color: #10b981;">
+      <h4>Monto Total Proyectado</h4>
+      <div class="number" id="kpi-monto-total">$0 ARS</div>
+    </div>
+    <div class="metric-card" style="border-color: #f59e0b;">
+      <h4>Técnicos Responsables</h4>
+      <div class="number" id="kpi-total-mecanicos">0</div>
+    </div>
+  </div>
+
   <div class="layout">
-    <!-- Formulario Registro -->
-    <div class="card">
-      <h3>📋 Recepción de Vehículo</h3>
-      <form id="form-orden">
-        <label>Nombre del Cliente</label>
-        <input type="text" id="cliente" required placeholder="Ej: Gabriela">
+    <!-- COLUMNA IZQUIERDA: FORMULARIO -->
+    <div>
+      <div class="card">
+        <h3>📋 Recepción de Vehículo</h3>
+        <form id="form-orden">
+          <label>Nombre del Cliente</label>
+          <input type="text" id="cliente" required placeholder="Ej: Juan Pérez">
 
-        <label>Teléfono (WhatsApp)</label>
-        <input type="text" id="telefono" required placeholder="+5491164670791">
+          <label>Teléfono (WhatsApp)</label>
+          <input type="text" id="telefono" required placeholder="5491164670791">
 
-        <label>Placa / Patente</label>
-        <input type="text" id="placa" required placeholder="BIN-957">
+          <label>Placa / Patente</label>
+          <input type="text" id="placa" required placeholder="ABC-123">
 
-        <label>Vehículo / Modelo</label>
-        <input type="text" id="vehiculo" required placeholder="Toyota">
+          <label>Vehículo / Modelo</label>
+          <input type="text" id="vehiculo" required placeholder="Toyota Corolla">
 
-        <label>Mecánico Asignado</label>
-        <input type="text" id="mecanico" placeholder="Ej: Pedro Gómez">
+          <label>Mecánico Responsable</label>
+          <input type="text" id="mecanico" required placeholder="Ej: Pedro Gómez">
 
-        <label>Diagnóstico Inicial</label>
-        <textarea id="diagnostico" rows="2" required placeholder="Cambio de filtro"></textarea>
+          <label>Diagnóstico Inicial</label>
+          <textarea id="diagnostico" rows="2" required placeholder="Alineación y balanceo"></textarea>
 
-        <label>Costo Estimado ($ ARS)</label>
-        <input type="number" id="costo" required placeholder="1000">
+          <label>Costo Estimado ($ ARS)</label>
+          <input type="number" id="costo" required placeholder="15000">
 
-        <button type="submit">Procesar e Ingresar al Taller</button>
-      </form>
+          <button type="submit">🚀 Ingresar y Notificar WhatsApp</button>
+        </form>
+      </div>
+
+      <!-- VISTA RESUMIDA DE MECÁNICOS PARA EL DUEÑO -->
+      <div class="card">
+        <h3>🧑‍🔧 Carga de Trabajo por Mecánico</h3>
+        <div id="mecanicos-container">
+          <p style="font-size:0.85rem; color:#64748b;">Cargando asignaciones...</p>
+        </div>
+      </div>
     </div>
 
-    <!-- Tabla de Ordenes -->
+    <!-- COLUMNA DERECHA: TABLA GENERAL DE ÓRDENES -->
     <div class="card">
-      <h3>🛠️ Vehículos Actualmente en Taller</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>N° Orden</th>
-            <th>Placa / Vehículo</th>
-            <th>Cliente / Tel.</th>
-            <th>Diagnóstico</th>
-            <th>Costo</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tabla-ordenes"></tbody>
-      </table>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0;">🛠️ Vehículos en Seguimiento</h3>
+        <input type="text" id="buscador" placeholder="🔍 Buscar cliente, patente..." style="width: 220px; padding:6px 10px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.85rem;">
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>N° Orden</th>
+              <th>Vehículo / Placa</th>
+              <th>Cliente / Teléfono</th>
+              <th>Mecánico</th>
+              <th>Diagnóstico</th>
+              <th>Costo</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-ordenes"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <script>
     let listaOrdenes = [];
 
-    // Cargar órdenes
-    async function cargarOrdenes() {
+    // Helper universal para sanitizar y abrir WhatsApp (Android / Web)
+    function abrirWhatsApp(telefono, mensaje) {
+      let num = (telefono || '').replace(/\D/g, '');
+      if (!num) {
+        alert("Número de teléfono inválido.");
+        return;
+      }
+      const url = `https://wa.me/${num}?text=${encodeURIComponent(mensaje)}`;
+      window.open(url, '_blank');
+    }
+
+    // Cargar órdenes y reportes desde el servidor
+    async function cargarDatos() {
       try {
-        const res = await fetch('/api/ordenes');
-        listaOrdenes = await res.json();
-        
-        const tbody = document.getElementById('tabla-ordenes');
-        tbody.innerHTML = '';
+        // Fetch Órdenes
+        const resOrdenes = await fetch('/api/ordenes');
+        listaOrdenes = await resOrdenes.json();
 
-        listaOrdenes.forEach(o => {
-          const costoVal = parseFloat(o.costo || o.costo_estimado || 0).toLocaleString('es-AR');
-          const estadoTexto = o.estado || 'En Reparacion';
-          const esListo = estadoTexto.toLowerCase().includes('listo') || estadoTexto.toLowerCase().includes('reparado');
+        // Fetch Reportes
+        const resReportes = await fetch('/api/reportes');
+        const reportes = await resReportes.json();
 
-          tbody.innerHTML += `
-            <tr>
-              <td><b>#${o.id}</b></td>
-              <td><b>${o.placa || o.patente || ''}</b><br><small>${o.vehiculo || o.marca || ''}</small></td>
-              <td>${o.cliente || o.nombre || '-'}<br><small>📱 ${o.telefono || '-'}</small></td>
-              <td>${o.diagnostico_inicial || o.diagnostico || '-'}</td>
-              <td><b>$ ${costoVal} ARS</b></td>
-              <td><span class="badge ${esListo ? 'badge-listo' : 'badge-reparacion'}">${estadoTexto}</span></td>
-              <td>
-                <button class="btn-notificar" onclick="marcarListoYNotificar(${o.id})">
-                  📲 Reparado (Notificar)
-                </button>
-              </td>
-            </tr>
-          `;
-        });
+        renderizarMetricas(reportes);
+        renderizarMecanicos(reportes.resumen_mecanicos);
+        renderizarTabla(listaOrdenes);
+
       } catch (err) {
-        console.error('Error al cargar:', err);
+        console.error('Error al sincronizar datos:', err);
       }
     }
 
-    // Guardar vehículo (Envía todos los nombres posibles de campos para que el backend no falle jamás)
+    // Renderizar métricas del dueñ@
+    function renderizarMetricas(rep) {
+      document.getElementById('kpi-total-autos').innerText = rep.total_en_taller || 0;
+      
+      const montoTotal = listaOrdenes.reduce((acc, curr) => acc + parseFloat(curr.costo || curr.costo_estimado || 0), 0);
+      document.getElementById('kpi-monto-total').innerText = `$ ${montoTotal.toLocaleString('es-AR')} ARS`;
+
+      document.getElementById('kpi-total-mecanicos').innerText = rep.resumen_mecanicos ? rep.resumen_mecanicos.length : 0;
+    }
+
+    // Renderizar tarjetas por Mecánico
+    function renderizarMecanicos(mecanicosList) {
+      const cont = document.getElementById('mecanicos-container');
+      cont.innerHTML = '';
+
+      if (!mecanicosList || mecanicosList.length === 0) {
+        cont.innerHTML = '<p style="font-size:0.85rem; color:#64748b;">No hay autos asignados actualmente.</p>';
+        return;
+      }
+
+      mecanicosList.forEach(m => {
+        const autosHTML = m.vehiculos_asignados.map(v => 
+          `<span class="car-tag"><b>${v.placa}</b> (${v.estado})</span>`
+        ).join('');
+
+        cont.innerHTML += `
+          <div class="mechanic-card">
+            <h5>👤 ${m.mecanico} (${m.total_autos} autos)</h5>
+            <div>${autosHTML}</div>
+          </div>
+        `;
+      });
+    }
+
+    // Renderizar Tabla
+    function renderizarTabla(datos) {
+      const tbody = document.getElementById('tabla-ordenes');
+      tbody.innerHTML = '';
+
+      datos.forEach(o => {
+        const costoVal = parseFloat(o.costo || o.costo_estimado || 0).toLocaleString('es-AR');
+        const estadoTexto = o.estado || 'En Reparacion';
+        const esListo = estadoTexto.toLowerCase().includes('listo') || estadoTexto.toLowerCase().includes('reparado');
+
+        tbody.innerHTML += `
+          <tr>
+            <td><b>#${o.id}</b></td>
+            <td><b>${o.placa || ''}</b><br><small>${o.vehiculo || ''}</small></td>
+            <td>${o.cliente || '-'}<br><small>📱 ${o.telefono || '-'}</small></td>
+            <td><b>${o.mecanico || 'Sin Asignar'}</b></td>
+            <td>${o.diagnostico_inicial || o.diagnostico || '-'}</td>
+            <td><b>$ ${costoVal} ARS</b></td>
+            <td><span class="badge ${esListo ? 'badge-listo' : 'badge-reparacion'}">${estadoTexto}</span></td>
+            <td>
+              <button class="btn-action btn-wa" onclick="notificarAlta(${o.id})">📲 Bienvenida</button>
+              <button class="btn-action btn-listo" onclick="marcarListoYNotificar(${o.id})">✅ Avisar Listo</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Buscar en tiempo real
+    document.getElementById('buscador').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const filtrados = listaOrdenes.filter(o => 
+        (o.cliente && o.cliente.toLowerCase().includes(query)) ||
+        (o.placa && o.placa.toLowerCase().includes(query)) ||
+        (o.vehiculo && o.vehiculo.toLowerCase().includes(query))
+      );
+      renderizarTabla(filtrados);
+    });
+
+    // Alta de nueva Orden con disparo automático de WhatsApp
     document.getElementById('form-orden').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -131,14 +256,13 @@
       const cos = document.getElementById('costo').value;
 
       const payload = {
-        // Enviar combinaciones de claves para compatibilidad absoluta
-        cliente: nom, nombre: nom, nombre_cliente: nom,
+        cliente: nom,
         telefono: tel,
-        placa: pla, patente: pla,
-        vehiculo: veh, marca: veh, modelo: veh,
-        mecanico: mec, mecanico_asignado: mec,
-        diagnostico: dia, diagnostico_inicial: dia,
-        costo: cos, costo_estimado: cos,
+        placa: pla,
+        vehiculo: veh,
+        mecanico: mec,
+        diagnostico: dia,
+        costo: cos,
         estado: 'En Reparacion'
       };
 
@@ -150,22 +274,37 @@
         });
 
         if (res.ok) {
+          const nuevaOrden = await res.json();
           document.getElementById('form-orden').reset();
-          cargarOrdenes();
+          cargarDatos();
+
+          // Disparar mensaje de WhatsApp de bienvenida
+          const urlPortal = `${window.location.origin}/cliente.html?orden=${nuevaOrden.id}`;
+          const msg = `Hola *${nom}*, recibimos tu vehículo *${veh}* (${pla}) en *Taller Mecánico 360* 🛠️.\n\nPuedes ver el estado del diagnóstico y avances en tiempo real en este enlace:\n${urlPortal}`;
+          
+          abrirWhatsApp(tel, msg);
         } else {
-          alert('El servidor rechazó el registro. Revisa la consola o logs de Render.');
+          alert('Error al registrar la orden.');
         }
       } catch (err) {
-        alert('Error de conexión.');
+        alert('Error de conexión con el servidor.');
       }
     });
 
-    // Cambiar estado a "Listo" Y abrir WhatsApp
+    // Re-enviar WhatsApp de Alta / Bienvenida
+    function notificarAlta(id) {
+      const o = listaOrdenes.find(item => item.id === id);
+      if (!o) return;
+      const urlPortal = `${window.location.origin}/cliente.html?orden=${o.id}`;
+      const msg = `Hola *${o.cliente}*, recuerda que puedes seguir el estado de tu vehículo *${o.vehiculo}* (${o.placa}) en tiempo real aquí:\n${urlPortal}`;
+      abrirWhatsApp(o.telefono, msg);
+    }
+
+    // Cambiar estado a "Listo" y notificar por WhatsApp
     async function marcarListoYNotificar(id) {
       const o = listaOrdenes.find(item => item.id === id);
       if (!o) return;
 
-      // 1. Cambiar estado en el servidor a "Listo"
       try {
         await fetch(`/api/ordenes/${id}`, {
           method: 'PUT',
@@ -173,32 +312,18 @@
           body: JSON.stringify({ estado: 'Listo' })
         });
       } catch (e) {
-        console.error("No se pudo actualizar estado en BD:", e);
+        console.error("Error al actualizar orden:", e);
       }
 
-      // 2. Armar y abrir WhatsApp
-      let tel = (o.telefono || '').replace(/\D/g, '');
-      if (tel.length === 10) tel = '549' + tel;
-
-      const linkPortal = `${window.location.origin}/cliente.html`;
-      const clienteNom = o.cliente || o.nombre || 'Cliente';
-      const autoDesc = o.vehiculo || o.marca || 'Vehículo';
-      const placaAuto = o.placa || o.patente || '';
       const costoVal = parseFloat(o.costo || o.costo_estimado || 0).toLocaleString('es-AR');
+      const msg = `¡Hola *${o.cliente}*! 🚗🎉\n\nTe informamos de *Taller Mecánico 360* que tu vehículo *${o.vehiculo}* (${o.placa}) ya está *LISTO PARA RETIRAR*.\n\n💰 *Total a abonar:* $${costoVal} ARS\n\n¡Te esperamos!`;
 
-      const mensaje = `Hola *${clienteNom}*, te saludamos de *Taller Mecánico 360* 🚘.\n\n` +
-        `Te informamos que tu vehículo *${autoDesc}* (Patente: *${placaAuto}*) ya se encuentra *LISTO / REPARADO*.\n\n` +
-        `📋 *Orden:* #${o.id}\n` +
-        `💰 *Total:* $${costoVal} ARS\n\n` +
-        `Puedes verificarlo en el portal:\n${linkPortal}\n\n` +
-        `¡Ya puedes pasar a retirarlo!`;
-
-      // 3. Abrir WhatsApp y recargar tabla
-      window.open(`https://api.whatsapp.com/send?phone=${tel}&text=${encodeURIComponent(mensaje)}`, '_blank');
-      cargarOrdenes();
+      abrirWhatsApp(o.telefono, msg);
+      cargarDatos();
     }
 
-    cargarOrdenes();
+    // Cargar información inicial
+    cargarDatos();
   </script>
 </body>
 </html>

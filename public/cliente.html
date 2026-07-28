@@ -3,142 +3,263 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Taller Mecánico 360 - Estado de Vehículo</title>
+  <title>Taller Mecánico 360 - Estado de tu Vehículo</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f1f5f9; color: #334155; }
-    .container { max-width: 500px; margin: 30px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-    h1 { text-align: center; color: #0f172a; margin-bottom: 5px; font-size: 1.5rem; }
-    p.subtitle { text-align: center; color: #64748b; font-size: 0.9rem; margin-top: 0; margin-bottom: 25px; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 15px; background-color: #f8fafc; color: #1e293b; }
+    .container { max-width: 520px; margin: 20px auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
     
-    .search-box { display: flex; gap: 10px; margin-bottom: 15px; }
-    .search-box input { flex: 1; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1.1rem; text-transform: uppercase; text-align: center; font-weight: bold; }
+    .header-logo { text-align: center; margin-bottom: 20px; }
+    .header-logo h1 { color: #0f172a; margin: 0 0 5px 0; font-size: 1.6rem; }
+    .header-logo p { color: #64748b; font-size: 0.88rem; margin: 0; }
+
+    /* BÚSQUEDA MANUAL POR PATENTE O ID */
+    .search-box { display: flex; gap: 8px; margin-bottom: 20px; }
+    .search-box input { flex: 1; padding: 12px; border: 2px solid #cbd5e1; border-radius: 10px; font-size: 1rem; text-transform: uppercase; text-align: center; font-weight: bold; }
     .search-box input:focus { border-color: #2563eb; outline: none; }
-    .search-box button { background-color: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-    .search-box button:hover { background-color: #1d4ed8; }
+    .search-box button { background-color: #2563eb; color: white; border: none; padding: 12px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
 
-    .result-card { display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-top: 20px; }
-    .result-item { margin-bottom: 12px; }
-    .result-item label { font-size: 0.8rem; color: #64748b; font-weight: bold; display: block; text-transform: uppercase; }
-    .result-item span { font-size: 1.05rem; font-weight: 600; color: #0f172a; }
+    /* TARJETA DE RESULTADOS */
+    .result-card { display: none; background: #ffffff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-top: 15px; }
 
-    .badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; text-align: center; margin-top: 5px; }
-    .badge-reparacion { background-color: #fef08a; color: #854d0e; }
-    .badge-listo { background-color: #bbf7d0; color: #166534; }
-    .badge-entregado { background-color: #e2e8f0; color: #475569; }
+    /* TRACKER VISUAL DE ETAPAS */
+    .stepper { display: flex; justify-content: space-between; position: relative; margin: 25px 0 30px 0; }
+    .stepper::before { content: ''; position: absolute; top: 15px; left: 10%; right: 10%; height: 3px; background: #e2e8f0; z-index: 1; }
+    .step { position: relative; z-index: 2; background: white; text-align: center; width: 25%; }
+    .step .circle { width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px auto; font-size: 0.85rem; font-weight: bold; transition: all 0.3s ease; }
+    .step .label { font-size: 0.7rem; color: #64748b; font-weight: bold; }
+    
+    .step.completed .circle { background: #10b981; color: white; }
+    .step.completed .label { color: #047857; }
+    .step.active .circle { background: #2563eb; color: white; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); }
+    .step.active .label { color: #1d4ed8; }
 
-    #msg-error { color: #dc2626; text-align: center; font-size: 0.95rem; display: none; margin-top: 15px; font-weight: bold; }
+    /* CAMPOS DE DETALLE */
+    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #f1f5f9; }
+    .detail-item { margin-bottom: 5px; }
+    .detail-item.full { grid-column: span 2; }
+    .detail-item label { font-size: 0.72rem; color: #64748b; font-weight: bold; display: block; text-transform: uppercase; }
+    .detail-item span { font-size: 0.95rem; font-weight: 600; color: #0f172a; }
+
+    /* BOTONES DE SOPORTE */
+    .btn-contact { display: block; width: 100%; text-align: center; background: #25d366; color: white; padding: 12px; border-radius: 10px; font-weight: bold; text-decoration: none; margin-top: 20px; font-size: 0.95rem; }
+
+    #msg-error { color: #dc2626; text-align: center; font-size: 0.9rem; display: none; margin-top: 15px; font-weight: bold; background: #fef2f2; padding: 10px; border-radius: 8px; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>🚘 Taller Mecánico 360</h1>
-    <p class="subtitle">Consulta el estado de tu vehículo en tiempo real</p>
-
-    <div class="search-box">
-      <input type="text" id="input-placa" placeholder="EJ: CTB-500" maxlength="10">
-      <button id="btn-buscar">Buscar</button>
+    <div class="header-logo">
+      <h1>⚙️ Taller Mecánico 360</h1>
+      <p>Estado de reparación de tu vehículo en tiempo real</p>
     </div>
 
-    <p id="msg-error"></p>
+    <!-- Buscador manual -->
+    <div class="search-box">
+      <input type="text" id="input-busqueda" placeholder="PATENTE O N° ORDEN" maxlength="15">
+      <button id="btn-buscar" onclick="ejecutarBusquedaManual()">Consultar</button>
+    </div>
 
+    <div id="msg-error"></div>
+
+    <!-- TARJETA CON LÍNEA DE TIEMPO -->
     <div id="resultado" class="result-card">
-      <div class="result-item">
-        <label>Orden de Servicio</label>
-        <span id="res-orden">#0</span>
+      
+      <!-- Stepper / Tracker de Progreso -->
+      <div class="stepper">
+        <div class="step" id="step-1">
+          <div class="circle">1</div>
+          <div class="label">Ingreso</div>
+        </div>
+        <div class="step" id="step-2">
+          <div class="circle">2</div>
+          <div class="label">Diagnóstico</div>
+        </div>
+        <div class="step" id="step-3">
+          <div class="circle">3</div>
+          <div class="label">Reparación</div>
+        </div>
+        <div class="step" id="step-4">
+          <div class="circle">4</div>
+          <div class="label">Listo</div>
+        </div>
       </div>
-      <div class="result-item">
-        <label>Vehículo</label>
-        <span id="res-vehiculo">-</span>
+
+      <!-- Detalle de la Orden -->
+      <div class="details-grid">
+        <div class="detail-item">
+          <label>Orden N°</label>
+          <span id="res-orden">#0</span>
+        </div>
+        <div class="detail-item">
+          <label>Placa / Patente</label>
+          <span id="res-placa">-</span>
+        </div>
+        <div class="detail-item full">
+          <label>Vehículo / Modelo</label>
+          <span id="res-vehiculo">-</span>
+        </div>
+        <div class="detail-item">
+          <label>Cliente</label>
+          <span id="res-cliente">-</span>
+        </div>
+        <div class="detail-item">
+          <label>Técnico Responsable</label>
+          <span id="res-mecanico">-</span>
+        </div>
+        <div class="detail-item full">
+          <label>Trabajo / Diagnóstico</label>
+          <span id="res-diagnostico">-</span>
+        </div>
+        <div class="detail-item full">
+          <label>Total Estimado</label>
+          <span id="res-costo" style="color: #059669; font-size: 1.1rem;">$ 0 ARS</span>
+        </div>
       </div>
-      <div class="result-item">
-        <label>Cliente</label>
-        <span id="res-cliente">-</span>
-      </div>
-      <div class="result-item">
-        <label>Diagnóstico / Servicio</label>
-        <span id="res-diagnostico">-</span>
-      </div>
-      <div class="result-item">
-        <label>Total Estimado</label>
-        <span id="res-costo">$ 0 ARS</span>
-      </div>
-      <div class="result-item">
-        <label>Estado Actual</label>
-        <div id="res-estado"></div>
-      </div>
+
+      <!-- Botón para consultas directa por WhatsApp al Taller -->
+      <a id="btn-whatsapp-taller" href="#" target="_blank" class="btn-contact">
+        💬 Consultar por WhatsApp sobre esta orden
+      </a>
     </div>
   </div>
 
   <script>
-    async function buscarVehiculo() {
-      const inputEl = document.getElementById('input-placa');
-      const errEl = document.getElementById('msg-error');
-      const resCard = document.getElementById('resultado');
+    // 1. Detección automática al cargar la página
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const ordenId = urlParams.get('orden');
+      const patente = urlParams.get('patente');
 
-      const busquedaLimpia = inputEl.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-      errEl.style.display = 'none';
-      resCard.style.display = 'none';
-
-      if (!busquedaLimpia) {
-        errEl.innerText = 'Por favor ingrese una patente válida.';
-        errEl.style.display = 'block';
-        return;
+      if (ordenId) {
+        document.getElementById('input-busqueda').value = ordenId;
+        consultarPorId(ordenId);
+      } else if (patente) {
+        document.getElementById('input-busqueda').value = patente;
+        ejecutarBusquedaManual();
       }
+    });
 
+    // 2. Búsqueda por ID directo
+    async function consultarPorId(id) {
+      ocultarMensajes();
       try {
-        const res = await fetch('/api/ordenes');
-        
-        if (!res.ok) {
-          throw new Error('Error al conectar con el servidor.');
-        }
-
-        const ordenes = await res.json();
-
-        // Buscar coincidencia flexible de patente
-        const o = ordenes.find(item => {
-          const placaDB = (item.placa || item.patente || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-          return placaDB === busquedaLimpia;
-        });
-
-        if (!o) {
-          errEl.innerText = 'No se encontró ningún vehículo registrado con la patente ' + inputEl.value;
-          errEl.style.display = 'block';
-          return;
-        }
-
-        // Cargar información en la pantalla
-        document.getElementById('res-orden').innerText = '#' + (o.id || o.numero_orden || '1');
-        document.getElementById('res-vehiculo').innerText = `${o.marca || ''} ${o.modelo || ''} (${o.placa || o.patente || ''})`;
-        document.getElementById('res-cliente').innerText = o.cliente || o.nombre_cliente || o.nombre || 'Cliente';
-        document.getElementById('res-diagnostico').innerText = o.diagnostico_inicial || o.diagnostico || 'Diagnóstico en revisión';
-        
-        const costoVal = parseFloat(o.costo || o.costo_estimado || 0);
-        document.getElementById('res-costo').innerText = `$ ${costoVal.toLocaleString('es-AR')} ARS`;
-
-        const estadoEl = document.getElementById('res-estado');
-        const estadoTexto = o.estado || 'En Reparacion';
-        let badgeClass = 'badge-reparacion';
-        if (estadoTexto.toLowerCase().includes('listo') || estadoTexto.toLowerCase().includes('reparado')) badgeClass = 'badge-listo';
-        if (estadoTexto.toLowerCase().includes('entregado')) badgeClass = 'badge-entregado';
-
-        estadoEl.innerHTML = `<span class="badge ${badgeClass}">${estadoTexto}</span>`;
-        resCard.style.display = 'block';
-
+        const res = await fetch(`/api/ordenes/${id}`);
+        if (!res.ok) throw new Error();
+        const orden = await res.json();
+        mostrarOrden(orden);
       } catch (err) {
-        console.error(err);
-        errEl.innerText = 'Error al consultar la base de datos. Intente nuevamente.';
-        errEl.style.display = 'block';
+        mostrarError(`No encontramos la Orden #${id}. Intente buscando por patente.`);
       }
     }
 
-    document.getElementById('btn-buscar').addEventListener('click', buscarVehiculo);
-    document.getElementById('input-placa').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        buscarVehiculo();
+    // 3. Búsqueda manual por patente o ID
+    async function ejecutarBusquedaManual() {
+      const query = document.getElementById('input-busqueda').value.trim().toUpperCase();
+      ocultarMensajes();
+
+      if (!query) {
+        mostrarError('Por favor ingrese su número de orden o patente.');
+        return;
       }
+
+      // Si es un número puro, buscamos por ID directamente
+      if (/^\d+$/.test(query)) {
+        consultarPorId(query);
+        return;
+      }
+
+      // Si es texto, buscamos por patente en la lista general
+      try {
+        const res = await fetch('/api/ordenes');
+        if (!res.ok) throw new Error();
+        const ordenes = await res.json();
+
+        const queryLimpia = query.replace(/[^A-Z0-9]/g, '');
+        const coincidencia = ordenes.find(o => {
+          const placaLimpia = (o.placa || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+          return placaLimpia === queryLimpia;
+        });
+
+        if (coincidencia) {
+          mostrarOrden(coincidencia);
+        } else {
+          mostrarError(`No hay ningún vehículo registrado con la patente ${query}.`);
+        }
+      } catch (err) {
+        mostrarError('Error de conexión al consultar el estado.');
+      }
+    }
+
+    // 4. Renderizar datos y actualizar Tracker
+    function mostrarOrden(o) {
+      document.getElementById('res-orden').innerText = '#' + o.id;
+      document.getElementById('res-placa').innerText = o.placa || 'N/A';
+      document.getElementById('res-vehiculo').innerText = o.vehiculo || `${o.marca || ''} ${o.modelo || ''}`.trim() || 'Vehículo';
+      document.getElementById('res-cliente').innerText = o.cliente || 'Cliente';
+      document.getElementById('res-mecanico').innerText = o.mecanico || 'Técnico Asignado';
+      document.getElementById('res-diagnostico').innerText = o.diagnostico_inicial || o.diagnostico || 'Revisión General';
+      
+      const costoVal = parseFloat(o.costo || o.costo_estimado || 0);
+      document.getElementById('res-costo').innerText = `$ ${costoVal.toLocaleString('es-AR')} ARS`;
+
+      // Configurar botón WhatsApp
+      const msgWA = encodeURIComponent(`Hola Taller 360, quería consultar sobre el estado de mi orden #${o.id} (${o.placa}).`);
+      document.getElementById('btn-whatsapp-taller').href = `https://wa.me/?text=${msgWA}`;
+
+      // Actualizar Tracker Visual según el estado
+      actualizarTracker(o.estado || 'En Reparacion');
+
+      document.getElementById('resultado').style.display = 'block';
+    }
+
+    // Actualiza los colores del Tracker de 4 pasos
+    function actualizarTracker(estadoTexto) {
+      const st = estadoTexto.toLowerCase();
+
+      // Resetear clases
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`step-${i}`);
+        el.className = 'step';
+      }
+
+      const s1 = document.getElementById('step-1');
+      const s2 = document.getElementById('step-2');
+      const s3 = document.getElementById('step-3');
+      const s4 = document.getElementById('step-4');
+
+      if (st.includes('listo') || st.includes('reparado') || st.includes('entregado')) {
+        s1.classList.add('completed');
+        s2.classList.add('completed');
+        s3.classList.add('completed');
+        s4.classList.add('active', 'completed');
+      } else if (st.includes('reparacion') || st.includes('trabajo')) {
+        s1.classList.add('completed');
+        s2.classList.add('completed');
+        s3.classList.add('active');
+      } else if (st.includes('diagnostico') || st.includes('espera')) {
+        s1.classList.add('completed');
+        s2.classList.add('active');
+      } else {
+        s1.classList.add('active');
+      }
+    }
+
+    function mostrarError(txt) {
+      const err = document.getElementById('msg-error');
+      err.innerText = txt;
+      err.style.display = 'block';
+      document.getElementById('resultado').style.display = 'none';
+    }
+
+    function ocultarMensajes() {
+      document.getElementById('msg-error').style.display = 'none';
+    }
+
+    // Permitir Enter en el input
+    document.getElementById('input-busqueda').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') ejecutarBusquedaManual();
     });
   </script>
 </body>
