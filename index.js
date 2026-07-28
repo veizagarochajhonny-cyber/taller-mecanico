@@ -1,226 +1,202 @@
-require('dotenv').config();
 const express = require('express');
-const { Pool } = require('pg');
+const cors = require('cors');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-supabase-js'); // Si usas supabase-js
+const { Pool } = require('pg'); // Si usas conexión directa PostgreSQL
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
-// Servir archivos estáticos de la carpeta public
+// Middlewares
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Servir archivos estáticos del frontend (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ----------------------------------------------------
-// RUTAS DE NAVEGACIÓN (VISTAS)
-// ----------------------------------------------------
-
-// 1. La raíz (/) entrega DIRECTO la vista de consulta para clientes
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'cliente.html'));
-});
-
-// 2. La ruta (/admin) entrega el panel del taller/administrador
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// ----------------------------------------------------
-// BASE DE DATOS POSTGRESQL
-// ----------------------------------------------------
+// Configuración de PostgreSQL en Render / Supabase
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-// ----------------------------------------------------
-// RUTAS DE LA API
-// ----------------------------------------------------
-
-// 1. REGISTRO RECEPCIÓN Y ORDEN COMPLETA
-app.post('/api/recepcion-completa', async (req, res) => {
-  const { nombre, telefono, placa, marca, modelo, mecanico, diagnostico, costo, aprobado } = req.body;
-
-  if (!aprobado) {
-    return res.status(400).json({ error: 'El cliente no aprobó el presupuesto. Orden cancelada.' });
-  }
-
-  const client = await pool.connect();
+// Asegurar que la tabla y columnas existan
+async function initDB() {
   try {
-    await client.query('BEGIN');
-
-    // Registrar o recuperar cliente
-    let clienteRes = await client.query('SELECT id FROM clientes WHERE telefono = $1', [telefono]);
-    let clienteId;
-    if (clienteRes.rows.length === 0) {
-      const nuevoCliente = await client.query(
-        'INSERT INTO clientes (nombre, telefono) VALUES ($1, $2) RETURNING id',
-        [nombre, telefono]
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ordenes (
+        id SERIAL PRIMARY KEY,
+        cliente VARCHAR(255),
+        telefono VARCHAR(100),
+        placa VARCHAR(50),
+        vehiculo VARCHAR(255),
+        marca VARCHAR(100),
+        modelo VARCHAR(100),
+        diagnostico_inicial TEXT,
+        diagnostico TEXT,
+        mecanico VARCHAR(255),
+        costo NUMERIC(12, 2) DEFAULT 0,
+        costo_estimado NUMERIC(12, 2) DEFAULT 0,
+        estado VARCHAR(100) DEFAULT 'En Reparacion',
+        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-      clienteId = nuevoCliente.rows[0].id;
-    } else {
-      clienteId = clienteRes.rows[0].id;
-    }
+    `);
+    
+    // Agregar columna mecanico por si la tabla ya existía sin ella
+    await pool.query(`
+      ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS mecanico VARCHAR(255);
+      ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS vehiculo VARCHAR(255);
+      ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS diagnostico_inicial TEXT;
+      ALTER TABLE ordenes ADD COLUMN IF NOT EXISTS costo_estimado NUMERIC(12, 2);
+    `);
 
-    // Registrar o recuperar vehículo
-    let vehiculoRes = await client.query('SELECT id FROM vehiculos WHERE placa = $1', [placa]);
-    let vehiculoId;
-    if (vehiculoRes.rows.length === 0) {
-      const nuevoVehiculo = await client.query(
-        'INSERT INTO vehiculos (cliente_id, marca, modelo, placa) VALUES ($1, $2, $3, $4) RETURNING id',
-        [clienteId, marca, modelo, placa]
-      );
-      vehiculoId = nuevoVehiculo.rows[0].id;
-    } else {
-      vehiculoId = vehiculoRes.rows[0].id;
-    }
-
-    // Crear orden de trabajo activa
-    const nuevaOrden = await client.query(
-      `INSERT INTO ordenes_trabajo (vehiculo_id, diagnostico_inicial, mecanico_asignado, costo, estado) 
-       VALUES ($1, $2, $3, $4, 'En Reparacion') RETURNING id`,
-      [vehiculoId, diagnostico, mecanico, costo]
-    );
-
-    await client.query('COMMIT');
-    res.json({ mensaje: 'Vehículo e ingreso procesado exitosamente', orden_id: nuevaOrden.rows[0].id });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error al procesar ingreso:', error);
-    res.status(500).json({ error: 'Error interno del servidor al registrar' });
-  } finally {
-    client.release();
+    console.log('✅ Base de datos verificada y actualizada correctamente.');
+  } catch (err) {
+    console.error('⚠️ Aviso en base de datos (continuando ejecucion):', err.message);
   }
-});
+}
 
-// 2. OBTENER ORDENES ACTIVAS
+initDB();
+
+// ==========================================
+// RUTAS DE LA API (/api/ordenes)
+// ==========================================
+
+// 1. Obtener todas las órdenes
 app.get('/api/ordenes', async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT 
-         o.id,
-         o.estado,
-         o.diagnostico_inicial,
-         o.costo,
-         v.marca,
-         v.modelo,
-         v.placa,
-         c.nombre as cliente,
-         c.telefono
-       FROM ordenes_trabajo o
-       JOIN vehiculos v ON o.vehiculo_id = v.id
-       JOIN clientes c ON v.cliente_id = c.id
-       ORDER BY o.id DESC`
-    );
+    const result = await pool.query('SELECT * FROM ordenes ORDER BY id DESC');
     res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error('Error en GET /api/ordenes:', err);
+    res.status(500).json({ error: 'Error al consultar las órdenes en la base de datos.' });
   }
 });
 
-// 3. CAMBIAR ESTADO A LISTO
-app.put('/api/ordenes/:id/listo', async (req, res) => {
+// 2. Registrar una nueva orden
+app.post('/api/ordenes', async (req, res) => {
+  const {
+    cliente,
+    telefono,
+    placa,
+    vehiculo,
+    marca,
+    modelo,
+    diagnostico_inicial,
+    diagnostico,
+    mecanico,
+    costo,
+    costo_estimado,
+    estado
+  } = req.body;
+
+  // Normalizar valores para evitar NULLs que rompan la base de datos
+  const valCliente = cliente || 'Cliente';
+  const valTelefono = telefono || '';
+  const valPlaca = (placa || '').toUpperCase();
+  const valVehiculo = vehiculo || `${marca || ''} ${modelo || ''}`.trim() || 'Vehículo';
+  const valMarca = marca || valVehiculo.split(' ')[0] || '';
+  const valModelo = modelo || valVehiculo.split(' ').slice(1).join(' ') || valMarca;
+  const valDiag = diagnostico_inicial || diagnostico || 'Revision general';
+  const valMecanico = mecanico || 'Sin Asignar';
+  const valCosto = parseFloat(costo || costo_estimado || 0);
+  const valEstado = estado || 'En Reparacion';
+
   try {
-    await pool.query("UPDATE ordenes_trabajo SET estado = 'Listo' WHERE id = $1", [req.params.id]);
-    res.json({ mensaje: 'Orden actualizada a LISTO.' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    const query = `
+      INSERT INTO ordenes 
+      (cliente, telefono, placa, vehiculo, marca, modelo, diagnostico_inicial, diagnostico, mecanico, costo, costo_estimado, estado)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *;
+    `;
 
-// 4. ENTREGAR Y COBRAR (SISTEMA DE BAJA DEL TALLER)
-app.put('/api/ordenes/:id/entregar', async (req, res) => {
-  try {
-    await pool.query("UPDATE ordenes_trabajo SET estado = 'Entregado' WHERE id = $1", [req.params.id]);
-    res.json({ mensaje: 'Orden entregada y cobrada con éxito.' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    const values = [
+      valCliente,
+      valTelefono,
+      valPlaca,
+      valVehiculo,
+      valMarca,
+      valModelo,
+      valDiag,
+      valDiag,
+      valMecanico,
+      valCosto,
+      valCosto,
+      valEstado
+    ];
 
-// 5. REPORTES DEL DUEÑO POR RANGO DE FECHAS
-app.get('/api/reportes/personalizado', async (req, res) => {
-  const { desde, hasta } = req.query;
+    const result = await pool.query(query, values);
+    res.status(201).json(result.rows[0]);
 
-  try {
-    const fechaInicio = desde ? `${desde} 00:00:00` : 'NOW()::date';
-    const fechaFin = hasta ? `${hasta} 23:59:59` : 'NOW()::date + interval \'1 day\'';
-
-    const balanceQuery = await pool.query(
-      `SELECT 
-         COUNT(*) as entregados,
-         COALESCE(SUM(costo), 0) as ingresos_totales
-       FROM ordenes_trabajo 
-       WHERE estado = 'Entregado' 
-         AND created_at >= $1 AND created_at <= $2`,
-      [fechaInicio, fechaFin]
-    );
-
-    const activosQuery = await pool.query(
-      `SELECT COUNT(*) as en_proceso FROM ordenes_trabajo WHERE estado != 'Entregado'`
-    );
-
-    const detalleQuery = await pool.query(
-      `SELECT 
-         o.id,
-         o.created_at,
-         v.marca,
-         v.modelo,
-         v.placa,
-         c.nombre as cliente,
-         o.diagnostico_inicial,
-         o.costo
-       FROM ordenes_trabajo o
-       JOIN vehiculos v ON o.vehiculo_id = v.id
-       JOIN clientes c ON v.cliente_id = c.id
-       WHERE o.estado = 'Entregado' 
-         AND o.created_at >= $1 AND o.created_at <= $2
-       ORDER BY o.created_at DESC`,
-      [fechaInicio, fechaFin]
-    );
-
-    res.json({
-      entregados: balanceQuery.rows[0].entregados,
-      ingresos_totales: balanceQuery.rows[0].ingresos_totales,
-      en_proceso: activosQuery.rows[0].en_proceso,
-      servicios: detalleQuery.rows
+  } catch (err) {
+    console.error('Error al insertar orden:', err);
+    res.status(500).json({ 
+      error: 'Error al guardar la orden en la base de datos.',
+      detalle: err.message 
     });
-  } catch (error) {
-    console.error('Error al generar reporte:', error);
-    res.status(500).json({ error: 'Error al consultar reporte' });
   }
 });
 
-// 6. CONSULTA PARA PORTAL CLIENTE
-app.get('/api/consulta-cliente/:placa', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT 
-         o.id,
-         o.estado,
-         o.diagnostico_inicial,
-         o.costo,
-         v.marca,
-         v.modelo,
-         v.placa,
-         c.nombre as cliente
-       FROM ordenes_trabajo o
-       JOIN vehiculos v ON o.vehiculo_id = v.id
-       JOIN clientes c ON v.cliente_id = c.id
-       WHERE UPPER(v.placa) = UPPER($1) AND o.estado != 'Entregado'
-       ORDER BY o.id DESC LIMIT 1`,
-      [req.params.placa]
-    );
+// 3. Actualizar el estado de una orden (Ej: Cambiar a "Listo" o "Entregado")
+app.put('/api/ordenes/:id', async (req, res) => {
+  const { id } = req.params;
+  const { estado, mecanico, costo } = req.body;
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'No se encontró un vehículo activo con esa placa.' });
+  try {
+    let updateFields = [];
+    let queryParams = [];
+    let paramIndex = 1;
+
+    if (estado !== undefined) {
+      updateFields.push(`estado = $${paramIndex++}`);
+      queryParams.push(estado);
+    }
+    if (mecanico !== undefined) {
+      updateFields.push(`mecanico = $${paramIndex++}`);
+      queryParams.push(mecanico);
+    }
+    if (costo !== undefined) {
+      updateFields.push(`costo = $${paramIndex++}`);
+      queryParams.push(parseFloat(costo));
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No hay datos para actualizar.' });
+    }
+
+    queryParams.push(id);
+    const query = `UPDATE ordenes SET ${updateFields.join(', ')} WHERE id = $${paramIndex} RETURNING *;`;
+
+    const result = await pool.query(query, queryParams);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Orden no encontrada.' });
     }
 
     res.json(result.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error('Error al actualizar orden:', err);
+    res.status(500).json({ error: 'Error al actualizar el registro.' });
   }
 });
 
-const PORT = process.env.PORT || 3000;
+// Ruta principal abre el panel de administración
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Ruta del portal de clientes
+app.get('/cliente', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cliente.html'));
+});
+
+// Redireccionar cualquier otra ruta no encontrada a la vista principal
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Arrancar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor iniciado en el puerto ${PORT}`);
+  console.log(`🚀 Servidor ejecutándose en el puerto ${PORT}`);
 });
